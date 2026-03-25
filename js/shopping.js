@@ -22,20 +22,20 @@ Object.assign(App, {
         const overlay = document.getElementById('shoppingModeOverlay');
         if (!overlay) return;
         overlay.classList.remove('hidden');
-        // Hide all nav sections first
         document.getElementById('navAislePanel').classList.add('hidden');
         document.getElementById('navStoreScreen').classList.add('hidden');
         document.getElementById('navHomeScreen').classList.add('hidden');
         document.getElementById('navShoppingMode').classList.remove('hidden');
-        // Close aisle panel overlay without touching nav (nav already set above)
         document.getElementById('aislePanelOverlay').classList.remove('show');
         UI.currentAislePanel = null;
         UI.lastAislePanel = null;
         const title = document.getElementById('shoppingModeTitle');
         const stats = document.getElementById('shoppingModeStats');
-        if (title) title.textContent = 'All Shopping Lists';
+        if (title) title.textContent = t('allShoppingLists');
+        const label = document.getElementById('shoppingModeLabel');
+        if (label) label.textContent = t('shoppingList');
         const totalItems = API.items.filter(i => !i.isChecked).length;
-        if (stats) stats.textContent = `${totalItems} item${totalItems !== 1 ? 's' : ''}`;
+        if (stats) stats.textContent = t('items', totalItems);
         this.renderShoppingModeList();
         this.setShoppingStatus(true);
     },
@@ -43,7 +43,6 @@ Object.assign(App, {
     closeShoppingMode() {
         const overlay = document.getElementById('shoppingModeOverlay');
         if (overlay) overlay.classList.add('hidden');
-        // Restore the correct nav
         document.getElementById('navShoppingMode').classList.add('hidden');
         if (UI.currentAislePanel) {
             document.getElementById('navAislePanel').classList.remove('hidden');
@@ -58,13 +57,12 @@ Object.assign(App, {
         if (!container) return;
 
         const allItems = API.items.filter(i => !i.isChecked);
-        // Update stats count live
         const stats = document.getElementById('shoppingModeStats');
-        if (stats) stats.textContent = `${allItems.length} item${allItems.length !== 1 ? 's' : ''}`;
+        if (stats) stats.textContent = t('items', allItems.length);
         if (!allItems.length) {
             container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#9ca3af;">
                 <div style="font-size:48px;margin-bottom:12px;">✅</div>
-                <p>All done! Your list is empty.</p>
+                <p>${t('allDone')}</p>
             </div>`;
             return;
         }
@@ -88,7 +86,7 @@ Object.assign(App, {
                         onerror="this.style.display='none'"
                         style="width:24px;height:24px;border-radius:4px;background:white;padding:2px;object-fit:contain;">` : ''}
                     <span style="font-size:16px;font-weight:700;color:white;">${Utils.escapeHtml(store.name)}</span>
-                    <span style="font-size:13px;color:rgba(255,255,255,0.75);margin-left:auto;">${storeItems.length} item${storeItems.length > 1 ? 's' : ''}</span>
+                    <span style="font-size:13px;color:rgba(255,255,255,0.75);margin-left:auto;">${t('items', storeItems.length)}</span>
                 </div>
             </div>`;
 
@@ -109,7 +107,7 @@ Object.assign(App, {
 
             storeAisles.forEach(aisle => {
                 html += `<div class="shop-aisle-group">
-                    <div class="shop-aisle-header">${Utils.escapeHtml(aisle.name)}</div>
+                    <div class="shop-aisle-header">${translateAisleName(aisle.name)}</div>
                     ${grouped[aisle.id].sort((a,b) => a.name.localeCompare(b.name)).map(item => this.renderShopItem(item)).join('')}
                 </div>`;
             });
