@@ -38,12 +38,18 @@ Object.assign(App, {
         const stats = document.getElementById('shoppingModeStats');
         const label = document.getElementById('shoppingModeLabel');
 
-        // Fixed: Use App.translate() instead of undefined t()
-        if (title) title.textContent = App.translate('allShoppingLists') || 'All Shopping Lists';
-        if (label) label.textContent = App.translate('shoppingList') || 'Shopping List';
+        // Safe translations (won't crash even if App.translate doesn't exist yet)
+        if (title) {
+            title.textContent = (typeof App.translate === 'function' ? App.translate('allShoppingLists') : null) || 'All Shopping Lists';
+        }
+        if (label) {
+            label.textContent = (typeof App.translate === 'function' ? App.translate('shoppingList') : null) || 'Shopping List';
+        }
 
         const totalItems = API.items.filter(i => !i.isChecked).length;
-        if (stats) stats.textContent = App.translate('items', totalItems) || `${totalItems} items`;
+        if (stats) {
+            stats.textContent = (typeof App.translate === 'function' ? App.translate('items', totalItems) : null) || `${totalItems} items`;
+        }
 
         this.renderShoppingModeList();
         this.setShoppingStatus(true);
@@ -71,13 +77,14 @@ Object.assign(App, {
         const allItems = API.items.filter(i => !i.isChecked);
         const stats = document.getElementById('shoppingModeStats');
 
-        // Fixed: Safe translation
-        if (stats) stats.textContent = App.translate('items', allItems.length) || `${allItems.length} items`;
+        if (stats) {
+            stats.textContent = (typeof App.translate === 'function' ? App.translate('items', allItems.length) : null) || `${allItems.length} items`;
+        }
 
         if (!allItems.length) {
             container.innerHTML = `<div style="text-align:center;padding:40px 20px;color:#9ca3af;">
                 <div style="font-size:48px;margin-bottom:12px;">✅</div>
-                <p>${App.translate('allDone') || 'All done!'}</p>
+                <p>${(typeof App.translate === 'function' ? App.translate('allDone') : null) || 'All done!'}</p>
             </div>`;
             return;
         }
@@ -102,7 +109,7 @@ Object.assign(App, {
                         style="width:24px;height:24px;border-radius:4px;background:white;padding:2px;object-fit:contain;">` : ''}
                     <span style="font-size:16px;font-weight:700;color:white;">${Utils.escapeHtml(store.name)}</span>
                     <span style="font-size:13px;color:rgba(255,255,255,0.75);margin-left:auto;">
-                        ${App.translate('items', storeItems.length) || `${storeItems.length} items`}
+                        ${(typeof App.translate === 'function' ? App.translate('items', storeItems.length) : null) || `${storeItems.length} items`}
                     </span>
                 </div>
             </div>`;
@@ -124,7 +131,7 @@ Object.assign(App, {
 
             storeAisles.forEach(aisle => {
                 html += `<div class="shop-aisle-group">
-                    <div class="shop-aisle-header">${translateAisleName ? translateAisleName(aisle.name) : aisle.name}</div>
+                    <div class="shop-aisle-header">${typeof translateAisleName === 'function' ? translateAisleName(aisle.name) : aisle.name}</div>
                     ${grouped[aisle.id].sort((a, b) => a.name.localeCompare(b.name))
                         .map(item => this.renderShopItem(item)).join('')}
                 </div>`;
@@ -178,6 +185,7 @@ Object.assign(App, {
     },
 
     async toggleShopItem(id) {
+        // Debounce — prevent double taps
         if (this._tappedItems && this._tappedItems.has(id)) return;
         if (!this._tappedItems) this._tappedItems = new Set();
         this._tappedItems.add(id);
@@ -188,6 +196,7 @@ Object.assign(App, {
             if (result && result.isChecked) {
                 this.playPing();
 
+                // Animate the item out
                 const el = document.querySelector(`.shop-item[onclick="App.toggleShopItem(${id})"]`);
                 if (el) {
                     el.style.transition = 'all 0.4s cubic-bezier(0.4,0,0.2,1)';
@@ -204,6 +213,7 @@ Object.assign(App, {
                     }, 350);
                 }
 
+                // Update state after animation
                 setTimeout(async () => {
                     const idx = API.items.findIndex(i => i.id === id);
                     if (idx !== -1) API.items[idx].isChecked = true;
