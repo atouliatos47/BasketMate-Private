@@ -1,3 +1,6 @@
+// ===================================================
+// api.js
+// ===================================================
 const API = {
     stores: [],
     aisles: [],
@@ -49,7 +52,6 @@ const API = {
         this.householdCode = data.code;
         localStorage.setItem('bm_household_id', data.id);
         localStorage.setItem('bm_household_code', data.code);
-        // Start 15-day trial from creation
         const trialStart = new Date().toISOString();
         localStorage.setItem('bm_trial_started', trialStart);
         this.trialStartedAt = trialStart;
@@ -72,10 +74,10 @@ const API = {
     },
 
     loadHousehold() {
-        const id   = localStorage.getItem('bm_household_id');
+        const id = localStorage.getItem('bm_household_id');
         const code = localStorage.getItem('bm_household_code');
         if (id && code) {
-            this.householdId   = parseInt(id);
+            this.householdId = parseInt(id);
             this.householdCode = code;
             return true;
         }
@@ -97,15 +99,13 @@ const API = {
 
         this.eventSource.addEventListener('init', (e) => {
             const data = JSON.parse(e.data);
-            this.stores     = data.stores;
-            this.aisles     = data.aisles;
-            this.items      = data.items;
+            this.stores = data.stores;
+            this.aisles = data.aisles;
+            this.items = data.items;
             this.favourites = data.favourites || [];
-            this.isPremium  = data.isPremium || false;
-            // Use server-provided trial start (more secure than localStorage)
+            this.isPremium = data.isPremium || false;
             this.trialStartedAt = data.trialStartedAt || localStorage.getItem('bm_trial_started');
             console.log('Init:', this.stores.length, 'stores,', this.aisles.length, 'aisles,', this.items.length, 'items', '| Premium:', this.isPremium, '| Trial days left:', this.trialDaysLeft);
-            // Private instance — no restrictions
             UI.renderHome();
             UI.renderTrialBanner();
             const badge = document.getElementById('connectionBadge');
@@ -121,7 +121,7 @@ const API = {
             const { id } = JSON.parse(e.data);
             this.stores = this.stores.filter(s => s.id !== id);
             this.aisles = this.aisles.filter(a => a.storeId !== id);
-            this.items  = this.items.filter(i => i.storeId !== id);
+            this.items = this.items.filter(i => i.storeId !== id);
             UI.renderHome();
         });
 
@@ -149,7 +149,6 @@ const API = {
             this.items.push(item);
             if (item.storeId === this.currentStoreId) UI.renderList();
             UI.renderHome();
-            // Only show in-app alert if shopping mode is currently open AND someone else added it
             const shoppingMode = document.getElementById('shoppingModeOverlay');
             const isShoppingModeOpen = shoppingMode && !shoppingMode.classList.contains('hidden');
             if (isShoppingModeOpen && item.addedBy && item.addedBy !== this.memberName) {
@@ -206,7 +205,6 @@ const API = {
             if (badge) { badge.textContent = '○ Offline'; badge.style.color = 'rgba(255,255,255,0.5)'; }
             this.eventSource.close();
             this.eventSource = null;
-            // Exponential backoff — max 30 seconds
             const delay = Math.min(3000 * (this._reconnectCount || 1), 30000);
             this._reconnectCount = (this._reconnectCount || 1) + 1;
             this._reconnectTimer = setTimeout(() => this.connectSSE(), delay);
@@ -215,7 +213,6 @@ const API = {
         this.eventSource.onopen = () => {
             const badge = document.getElementById('connectionBadge');
             if (badge) { badge.textContent = '● Live'; badge.style.color = ''; }
-            // Reset reconnect counter on successful connection
             this._reconnectCount = 1;
             clearTimeout(this._reconnectTimer);
         };
@@ -236,6 +233,29 @@ const API = {
         const r = await fetch(`/stores/${id}/delete`, { method: 'POST' });
         if (!r.ok) throw new Error('Failed to delete store');
         return await r.json();
+    },
+
+    // ===== NEW: FETCH AISLES =====
+    async fetchAisles(storeId) {
+        if (!storeId) return;
+
+        try {
+            const r = await fetch(`/aisles?storeId=${storeId}&householdId=${this.householdId}`);
+            if (!r.ok) throw new Error('Failed to fetch aisles');
+
+            const freshAisles = await r.json();
+
+            // Update only aisles for this store (keep other stores' aisles)
+            this.aisles = this.aisles.filter(a => a.storeId !== storeId);
+            this.aisles.push(...freshAisles);
+
+            console.log(`✅ Fetched ${freshAisles.length} aisles for store ${storeId}`);
+            return freshAisles;
+        } catch (err) {
+            console.warn('Failed to fetch aisles from server:', err);
+            // Don't throw — we can still use local data
+            return [];
+        }
     },
 
     // ===== AISLE METHODS =====
@@ -365,7 +385,7 @@ const API = {
     startKeepAlive() {
         setInterval(() => {
             if (this.householdId) {
-                fetch(`/items?householdId=${this.householdId}`).catch(() => {});
+                fetch(`/items?householdId=${this.householdId}`).catch(() => { });
             }
         }, 10 * 60 * 1000);
     }
