@@ -36,60 +36,22 @@ const App = {
     },
 
     init() {
-        console.log("BasketMate initializing...");
-        
-        // 1. Load existing household
-        const hasHousehold = API.loadHousehold();
+        console.log('BasketMate initializing...');
+        this.setupEventListeners();
+        this.showSplash();
 
+        const hasHousehold = API.loadHousehold();
         if (hasHousehold) {
-            // Only show the app if we have a household
-            document.getElementById('homeScreen').classList.remove('hidden');
+            API.memberName = localStorage.getItem('bm_member_name') || 'Someone';
+            setTimeout(() => {
+                const splash = document.getElementById('splashScreen');
+                if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
+            }, 1800);
             API.connectSSE();
             API.startKeepAlive();
-            UI.renderHome();
+            setTimeout(() => this.setupPushNotifications(), 4000);
         } else {
-            // If no household, force the welcome/setup screen
-            this.showWelcomeScreen();
-        }
-    },
-
-    showWelcomeScreen() {
-        // 1. Keep the main app hidden (the lockout)
-        document.getElementById('homeScreen').classList.add('hidden');
-        
-        // 2. Clear the modal and inject the "Welcome" choices
-        const modal = document.getElementById('modal');
-        const overlay = document.getElementById('modalOverlay');
-        
-        modal.innerHTML = `
-            <div style="text-align:center; padding: 10px;">
-                <h3 style="margin-bottom:8px;">🏠 Welcome to BasketMate</h3>
-                <p style="color:#6b7280; font-size:14px; margin-bottom:20px;">To get started, create a new household list or join an existing one.</p>
-                
-                <div style="display:flex; flex-direction:column; gap:12px;">
-                    <button class="modal-btn confirm" onclick="App.createNewHousehold()" style="width:100%; padding:15px;">
-                        ✨ Create New Household
-                    </button>
-                    <button class="modal-btn cancel" onclick="App.showSwitchHousehold()" style="width:100%; padding:15px; border: 1.5px solid #e5e7eb;">
-                        👥 Join Existing (Enter Code)
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        // 3. Show the modal
-        overlay.classList.add('show');
-        
-        console.log("Blocking app access until household is created.");
-    },
-
-    async createNewHousehold() {
-        try {
-            await API.createHousehold();
-            // Once created, refresh the app
-            window.location.reload(); 
-        } catch(e) {
-            alert("Failed to create household. Please check your connection.");
+            setTimeout(() => this.showHouseholdSetup(), 2200);
         }
     },
 
