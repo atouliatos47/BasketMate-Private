@@ -7,8 +7,10 @@ Object.assign(App, {
     enterStore(storeId) {
         const store = API.stores.find(s => s.id === storeId);
         if (!store) return;
+
         API.currentStoreId = storeId;
 
+        // Apply store theme
         document.documentElement.style.setProperty('--store-color', store.color);
         document.documentElement.style.setProperty('--store-color-dark', App.darken(store.color));
         document.documentElement.style.setProperty('--accent', store.color);
@@ -16,6 +18,7 @@ Object.assign(App, {
         document.documentElement.style.setProperty('--home-btn-color', store.color);
         document.documentElement.style.setProperty('--home-btn-shadow', store.color + '80');
 
+        // Store logo + title
         const logoDomain = UI.getStoreLogo(store.name);
         const storeTitle = document.getElementById('storeTitle');
         if (logoDomain) {
@@ -27,18 +30,31 @@ Object.assign(App, {
             storeTitle.textContent = store.name;
         }
 
+        // Switch screens
         document.getElementById('homeScreen').classList.add('hidden');
         document.getElementById('storeScreen').classList.remove('hidden');
         document.getElementById('navHomeScreen').classList.add('hidden');
         document.getElementById('navStoreScreen').classList.remove('hidden');
 
         this.requestWakeLock();
+
+        // Render what we already have locally first (instant UI)
         UI.renderAisles();
         UI.renderList();
-        // Refresh aisles from server in case new store was just seeded
-        API.fetchAisles(storeId).then(() => {
-            UI.renderAisles();
-        }).catch(() => {});
+
+        // Then try to refresh aisles from the server
+        if (typeof API.fetchAisles === 'function') {
+            API.fetchAisles(storeId)
+                .then(() => {
+                    UI.renderAisles();
+                })
+                .catch(err => {
+                    console.warn('Failed to fetch aisles from server:', err);
+                    // We can still continue with local data
+                });
+        } else {
+            console.warn('API.fetchAisles is not implemented yet — using local data only');
+        }
     },
 
     goHome() {
@@ -54,7 +70,7 @@ Object.assign(App, {
 
     // ===== ADD STORE =====
     showAddStore() {
-        // Store name → auto colour map
+        // ... (your existing code - unchanged)
         const storeColours = {
             'co-op': '#00B1A9', 'coop': '#00B1A9', 'co op': '#00B1A9',
             'tesco': '#005EA5', 'iceland': '#D61F26',
@@ -120,16 +136,17 @@ Object.assign(App, {
         const emoji = document.getElementById('newStoreEmoji').value.trim() || '🏪';
         const color = document.getElementById('newStoreColour').value;
         if (!name) { Utils.shakeElement(document.getElementById('newStoreName')); return; }
-        // Disable button to prevent double submit
+
         const btn = document.querySelector('#modal .modal-btn.confirm');
         if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+
         try {
             await API.addStore({ name, emoji, color });
             Utils.closeModal();
             Utils.showToast(`${emoji} ${name} added! ✓`);
         } catch(e) {
             Utils.closeModal();
-            Utils.showToast(`${emoji} ${name} added! ✓`);
+            Utils.showToast(`${emoji} ${name} added! ✓`); // optimistic UI
         }
     },
 
@@ -154,13 +171,18 @@ Object.assign(App, {
             await API.deleteStore(storeId);
             Utils.closeModal();
             Utils.showToast('Store deleted');
-        } catch(e) { Utils.showToast('Failed to delete store', true); }
+        } catch(e) { 
+            Utils.showToast('Failed to delete store', true); 
+        }
     },
 
     // ===== CLEAR CHECKED =====
     async clearChecked() {
         const checked = API.storeItems.filter(i => i.isChecked);
-        if (!checked.length) { Utils.showToast('No checked items!', true); return; }
+        if (!checked.length) { 
+            Utils.showToast('No checked items!', true); 
+            return; 
+        }
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
         modal.innerHTML = `
@@ -178,6 +200,8 @@ Object.assign(App, {
             await API.clearChecked();
             Utils.closeModal();
             Utils.showToast('Cleared! ✓');
-        } catch(e) { Utils.showToast('Failed to clear', true); }
+        } catch(e) { 
+            Utils.showToast('Failed to clear', true); 
+        }
     }
 });
