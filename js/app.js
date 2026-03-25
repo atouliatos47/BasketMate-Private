@@ -36,23 +36,30 @@ const App = {
     },
 
     init() {
-        console.log('BasketMate initializing...');
-        this.setupEventListeners();
-        this.showSplash();
-
+        console.log("BasketMate initializing...");
+        
+        // 1. Load existing household
         const hasHousehold = API.loadHousehold();
+
         if (hasHousehold) {
-            API.memberName = localStorage.getItem('bm_member_name') || 'Someone';
-            setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
-            }, 1800);
+            // Only show the app if we have a household
+            document.getElementById('homeScreen').classList.remove('hidden');
             API.connectSSE();
             API.startKeepAlive();
-            setTimeout(() => this.setupPushNotifications(), 4000);
+            UI.renderHome();
         } else {
-            setTimeout(() => this.showHouseholdSetup(), 2200);
+            // If no household, force the welcome/setup screen
+            this.showWelcomeScreen();
         }
+    },
+
+    showWelcomeScreen() {
+        // Hide the main app UI entirely
+        document.getElementById('homeScreen').classList.add('hidden');
+        
+        // Logic to show your 'Create Household' modal or screen
+        // Example: UI.showSetupModal();
+        console.log("Blocking app access until household is created.");
     },
 
     showSplash() {
