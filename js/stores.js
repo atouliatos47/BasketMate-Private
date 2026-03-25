@@ -36,9 +36,7 @@ Object.assign(App, {
         UI.renderAisles();
         UI.renderList();
         // Refresh aisles from server in case new store was just seeded
-        API.fetchAisles(storeId).then(() => {
-            UI.renderAisles();
-        }).catch(() => {});
+
     },
 
     goHome() {
