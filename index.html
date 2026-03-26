@@ -17,11 +17,17 @@
     <link rel="icon" href="/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" sizes="180x180" href="/img/icon-180.png">
 
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/style.css">
-    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js')
+                .catch(err => console.log('Service Worker registration failed:', err));
+        }
+    </script>
 </head>
 
 <body>
@@ -211,7 +217,6 @@
         <div class="store-header">
             <span class="store-title" id="storeTitle"></span>
             <span class="stats-bar" id="statsBar"></span>
-
         </div>
 
         <div class="main-layout">
@@ -285,6 +290,7 @@
                 <span class="nav-label" id="navLabelAddStore">Add Store</span>
             </button>
         </div>
+
         <!-- STORE SCREEN NAV -->
         <div class="nav-store-screen hidden" id="navStoreScreen">
             <button class="nav-btn-shop" id="navBtnShop" onclick="App.openShoppingMode()">
@@ -298,6 +304,7 @@
                 </svg>
             </button>
         </div>
+
         <!-- SHOPPING MODE NAV -->
         <div class="nav-store-screen hidden" id="navShoppingMode">
             <button class="nav-btn-back" onclick="App.closeShoppingMode()">
@@ -307,6 +314,7 @@
                 </svg>
             </button>
         </div>
+
         <!-- AISLE PANEL NAV -->
         <div class="nav-aisle-panel hidden" id="navAislePanel">
             <button class="nav-btn-shop" onclick="App.openShoppingMode()">
@@ -332,24 +340,29 @@
             <div class="shopping-mode-header-top">
                 <span class="shopping-mode-label" id="shoppingModeLabel">🛒 Shopping List</span>
                 <span class="shopping-mode-stats" id="shoppingModeStats"></span>
-
             </div>
             <span class="shopping-mode-title" id="shoppingModeTitle"></span>
         </div>
         <div class="shopping-mode-list" id="shoppingModeList"></div>
     </div>
 
+    <!-- ====================== SCRIPTS ====================== -->
+    <!-- Third-party -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
+
+    <!-- i18n files -->
     <script src="/js/i18n/core.js"></script>
     <script src="/js/i18n/lang-en.js"></script>
-    <script src="/js/i18n/lang-pl.js"></script>
-    <script src="/js/i18n/lang-ro.js"></script>
-    <script src="/js/i18n/lang-el.js"></script>
-    <script src="/js/i18n/lang-ur.js"></script>
-    <script src="/js/i18n/lang-pa.js"></script>
-    <script src="/js/i18n/lang-bn.js"></script>
-    <script src="/js/i18n/lang-zh.js"></script>
+    <!-- Remove languages you haven't created yet to reduce 404s -->
+    <!-- <script src="/js/i18n/lang-pl.js"></script> -->
+    <!-- <script src="/js/i18n/lang-ro.js"></script> -->
+    <!-- <script src="/js/i18n/lang-el.js"></script> -->
+    <!-- <script src="/js/i18n/lang-ur.js"></script> -->
+    <!-- <script src="/js/i18n/lang-pa.js"></script> -->
+    <!-- <script src="/js/i18n/lang-bn.js"></script> -->
+    <!-- <script src="/js/i18n/lang-zh.js"></script> -->
 
+    <!-- Core application scripts -->
     <script src="/js/utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/ui.js"></script>
