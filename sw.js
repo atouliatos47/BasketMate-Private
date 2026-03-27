@@ -1,16 +1,9 @@
-const CACHE_NAME = 'basketmate-v10';
+const CACHE_NAME = 'basketmate-v17';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/manifest.json',
     '/css/style.css',
-    '/js/utils.js',
-    '/js/api.js',
-    '/js/ui.js',
-    '/js/app.js',
-    '/js/stores.js',
-    '/js/shopping.js',
-    '/js/settings.js',
     '/img/icon-192.png',
     '/img/icon-512.png',
     '/img/atstudios-logo.jpg'
@@ -19,7 +12,7 @@ const STATIC_ASSETS = [
 self.addEventListener('install', e => {
     e.waitUntil(
         caches.open(CACHE_NAME).then(cache =>
-            Promise.allSettled(STATIC_ASSETS.map(url => cache.add(url).catch(() => {})))
+            Promise.allSettled(STATIC_ASSETS.map(url => cache.add(url).catch(() => { })))
         )
     );
     self.skipWaiting();
