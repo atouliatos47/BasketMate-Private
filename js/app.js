@@ -202,6 +202,7 @@ const App = {
     },
 
     startApp() {
+        document.getElementById('homeScreen').classList.remove('hidden');
         const overlay = document.getElementById('modalOverlay');
         overlay.classList.remove('show');
         overlay.addEventListener('click', (e) => { if (e.target === overlay) Utils.closeModal(); });
