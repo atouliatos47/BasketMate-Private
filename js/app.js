@@ -7,7 +7,7 @@ const App = {
     async requestWakeLock() {
         try {
             if (screen.orientation && screen.orientation.lock) {
-                await screen.orientation.lock('portrait').catch(() => {});
+                await screen.orientation.lock('portrait').catch(() => { });
             }
             if ('wakeLock' in navigator) {
                 this.wakeLock = await navigator.wakeLock.request('screen');
@@ -22,7 +22,7 @@ const App = {
                     });
                 }
             }
-        } catch(e) { console.log('Wake lock not available:', e); }
+        } catch (e) { console.log('Wake lock not available:', e); }
     },
 
     async releaseWakeLock() {
@@ -32,7 +32,7 @@ const App = {
                 await this.wakeLock.release();
                 this.wakeLock = null;
             }
-        } catch(e) { console.log('Wake lock release error:', e); }
+        } catch (e) { console.log('Wake lock release error:', e); }
     },
 
     init() {
@@ -41,24 +41,18 @@ const App = {
         this.showSplash();
 
         const hasHousehold = API.loadHousehold();
-        const hasLanguage = !!localStorage.getItem('bm_language');
-
         if (hasHousehold) {
             API.memberName = localStorage.getItem('bm_member_name') || 'Someone';
             setTimeout(() => {
                 const splash = document.getElementById('splashScreen');
                 if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
             }, 1800);
-            if (!hasLanguage) {
-                setTimeout(() => this.showLanguageFirst(), 2200);
-            } else {
-                this.applyTranslations();
-                API.connectSSE();
-                API.startKeepAlive();
-                setTimeout(() => this.setupPushNotifications(), 4000);
-            }
+            this.applyTranslations(); // ADD THIS LINE
+            API.connectSSE();
+            API.startKeepAlive();
+            setTimeout(() => this.setupPushNotifications(), 4000);
         } else {
-            setTimeout(() => this.showLanguageFirst(), 2200);
+            setTimeout(() => this.showHouseholdSetup(), 2200);
         }
     },
 
@@ -137,19 +131,19 @@ const App = {
         const storesContainer = document.getElementById('splashStores');
         if (!splash) return;
         const stores = [
-            { name: 'Tesco',        color: '#005EA5', domain: 'tesco.com' },
-            { name: 'Iceland',      color: '#D61F26', domain: 'iceland.co.uk' },
-            { name: 'Lidl',         color: '#0050AA', domain: 'lidl.co.uk' },
-            { name: "Sainsbury's",  color: '#F47920', domain: 'sainsburys.co.uk' },
-            { name: 'B&M',          color: '#6B2D8B', domain: 'bmstores.co.uk' },
-            { name: 'Asda',         color: '#78BE20', domain: 'asda.com' },
-            { name: 'Morrisons',    color: '#00AA4F', domain: 'morrisons.com' },
-            { name: 'M&S',          color: '#000000', domain: 'marksandspencer.com' },
-            { name: 'Aldi',         color: '#003082', domain: 'aldi.co.uk' },
-            { name: 'Co-op',        color: '#00B1A9', domain: 'coop.co.uk' },
+            { name: 'Tesco', color: '#005EA5', domain: 'tesco.com' },
+            { name: 'Iceland', color: '#D61F26', domain: 'iceland.co.uk' },
+            { name: 'Lidl', color: '#0050AA', domain: 'lidl.co.uk' },
+            { name: "Sainsbury's", color: '#F47920', domain: 'sainsburys.co.uk' },
+            { name: 'B&M', color: '#6B2D8B', domain: 'bmstores.co.uk' },
+            { name: 'Asda', color: '#78BE20', domain: 'asda.com' },
+            { name: 'Morrisons', color: '#00AA4F', domain: 'morrisons.com' },
+            { name: 'M&S', color: '#000000', domain: 'marksandspencer.com' },
+            { name: 'Aldi', color: '#003082', domain: 'aldi.co.uk' },
+            { name: 'Co-op', color: '#00B1A9', domain: 'coop.co.uk' },
         ];
         storesContainer.innerHTML = stores.map((store, i) => {
-            const initials = store.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+            const initials = store.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
             return `<div class="splash-store" style="animation-delay:${0.4 + i * 0.12}s">
                 <div class="splash-store-avatar" id="splash-avatar-${i}" style="background:white;">
                     <img src="https://www.google.com/s2/favicons?domain=${store.domain}&sz=128" alt="${store.name}"
@@ -197,7 +191,7 @@ const App = {
             if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
             const data = await API.createHousehold();
             this.showHouseholdCode(data.code);
-        } catch(e) {
+        } catch (e) {
             Utils.showToast('Failed to create household', true);
             const btn = document.querySelector('#modal button');
             if (btn) { btn.disabled = false; btn.textContent = '✨ Create New Household'; }
@@ -270,7 +264,7 @@ const App = {
             await API.joinHousehold(code);
             Utils.showToast('Joined household! 🏠');
             this.showNameSetup();
-        } catch(e) {
+        } catch (e) {
             input.disabled = false;
             input.style.borderColor = '#dc2626';
             error.textContent = 'Household not found. Check the code and try again.';
@@ -300,7 +294,7 @@ const App = {
             const subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.urlBase64ToUint8Array(publicKey) });
             await fetch('/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription, householdId: API.householdId }) });
             console.log('Push notifications enabled!');
-        } catch(e) { console.log('Push setup failed:', e); }
+        } catch (e) { console.log('Push setup failed:', e); }
     },
 
     urlBase64ToUint8Array(base64String) {
@@ -354,11 +348,11 @@ const App = {
                 <div style="font-size:52px;margin-bottom:12px;">👨‍👩‍👧‍👦</div>
                 <h2 style="margin:0 0 6px;font-size:22px;color:#1a1a2e;">BasketMate Family</h2>
                 ${trialExpired
-                    ? `<div style="background:#fee2e2;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#dc2626;font-weight:600;">⏰ Your 15-day free trial has ended</div>`
-                    : daysLeft <= 5
+                ? `<div style="background:#fee2e2;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#dc2626;font-weight:600;">⏰ Your 15-day free trial has ended</div>`
+                : daysLeft <= 5
                     ? `<div style="background:#fef3c7;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#d97706;font-weight:600;">⏳ ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in your trial</div>`
                     : ''
-                }
+            }
                 ${reason ? `<p style="color:#6b7280;font-size:13px;margin:0 0 16px;">${reason}</p>` : ''}
                 <div style="background:#f0f9ff;border-radius:14px;padding:16px;margin-bottom:20px;text-align:left;">
                     <div style="font-weight:700;color:#1a1a2e;margin-bottom:10px;">Everything in Family:</div>
@@ -418,7 +412,7 @@ const App = {
                 UI.renderHome();
                 UI.renderTrialBanner();
 
-            } catch(e) {
+            } catch (e) {
                 console.error('Purchase error:', e);
                 if (e.name !== 'AbortError') {
                     Utils.showToast('Purchase failed. Please try again.', true);
@@ -435,7 +429,7 @@ const App = {
                     UI.renderHome();
                     UI.renderTrialBanner();
                     Utils.showToast('🎉 Upgraded to BasketMate Family!');
-                } catch(e) {
+                } catch (e) {
                     Utils.showToast('Purchase failed', true);
                 }
             }, 1000);
