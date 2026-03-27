@@ -50,38 +50,38 @@ const UI = {
             const itemCount = API.items.filter(i => i.storeId === store.id && !i.isChecked).length;
             const initials = store.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
             const logoDomain = this.getStoreLogo(store.name);
-            const avatarHtml = logoDomain
-                ? `<div class="store-card-avatar store-card-avatar-logo" id="avatar-${store.id}">
-                       <img src="https://www.google.com/s2/favicons?domain=${logoDomain}&sz=128"
-                           alt="${Utils.escapeHtml(store.name)}"
-                           onload="this.style.opacity=1"
-                           onerror="UI.logoFallback(${store.id},'${initials}','${store.color}')"
-                           style="width:40px;height:40px;object-fit:contain;opacity:0;transition:opacity 0.3s;border-radius:6px;">
-                   </div>`
-                : `<div class="store-card-avatar" style="background:${store.color};">
-                       <span class="store-card-initials">${initials}</span>
-                   </div>`;
 
             return `
-                <div class="store-card-wrapper" style="position:relative;margin-bottom:0;">
-                    <div class="store-card" onclick="App.enterStore(${store.id})"
-                        style="--card-color: ${store.color};">
-                        <div class="store-card-accent" style="background:${store.color};"></div>
-                        <div class="store-card-body">
-                            ${avatarHtml}
-                            <div class="store-card-info">
-                                <div class="store-card-name">${Utils.escapeHtml(store.name)}</div>
-                                <div class="store-card-status ${itemCount ? 'has-items' : ''}">
-                                    ${itemCount ? `${itemCount} item${itemCount > 1 ? 's' : ''} in list` : 'List is empty'}
-                                </div>
+                <div style="position:relative;background:white;border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);border:1px solid rgba(0,0,0,0.04);cursor:pointer;-webkit-tap-highlight-color:transparent;"
+                    onclick="App.enterStore(${store.id})">
+                    <div style="position:absolute;left:0;top:0;bottom:0;width:4px;background:${store.color};border-radius:16px 0 0 16px;"></div>
+                    <div style="display:flex;flex-direction:column;align-items:center;padding:18px 12px 14px;gap:10px;">
+                        ${logoDomain
+                            ? `<div style="width:48px;height:48px;border-radius:12px;background:white;border:1px solid var(--ink-100);display:flex;align-items:center;justify-content:center;box-shadow:var(--shadow-xs);">
+                                <img src="https://www.google.com/s2/favicons?domain=${logoDomain}&sz=128"
+                                    alt="${Utils.escapeHtml(store.name)}"
+                                    onload="this.style.opacity=1"
+                                    onerror="UI.logoFallback(${store.id},'${initials}','${store.color}')"
+                                    style="width:32px;height:32px;object-fit:contain;opacity:0;transition:opacity 0.3s;border-radius:4px;"
+                                    id="avatar-${store.id}">
+                               </div>`
+                            : `<div style="width:48px;height:48px;border-radius:12px;background:${store.color};display:flex;align-items:center;justify-content:center;">
+                                <span style="font-size:16px;font-weight:800;color:white;letter-spacing:-0.5px;">${initials}</span>
+                               </div>`
+                        }
+                        <div style="text-align:center;width:100%;">
+                            <div style="font-size:13px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${Utils.escapeHtml(store.name)}</div>
+                            <div style="font-size:11px;font-weight:500;margin-top:3px;color:${itemCount ? 'var(--green)' : 'var(--text-secondary)'};">
+                                ${itemCount ? t('itemsInList', itemCount) : t('listIsEmpty')}
                             </div>
                         </div>
                     </div>
-                    ${!logoDomain ? `<button class="store-card-delete-outside" onclick="App.confirmDeleteStore(${store.id})" title="Delete store">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <button onclick="event.stopPropagation();App.confirmDeleteStore(${store.id})"
+                        style="position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,0.07);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none">
                             <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
                         </svg>
-                    </button>` : ''}
+                    </button>
                 </div>`;
         }).join('');
     },
@@ -619,27 +619,6 @@ const UI = {
         </div>`;
     },
 
-    async handleCheck(id) {
-        try {
-            const result = await API.toggleCheck(id);
-            if (result && result.isChecked) {
-                // Update local state immediately and show crossed out
-                const idx = API.items.findIndex(i => i.id === id);
-                if (idx !== -1) API.items[idx].isChecked = true;
-                UI.renderList();
-                // Delete after short delay
-                setTimeout(async () => {
-                    try { await API.deleteItem(id); } catch(e) {}
-                    // Force remove from local state regardless
-                    API.items = API.items.filter(i => i.id !== id);
-                    UI.renderList();
-                    UI.renderStats();
-                }, 800);
-            }
-        } catch(e) {
-            console.log('handleCheck error:', e);
-        }
-    },
     async handleCheck(id) {
         try {
             const result = await API.toggleCheck(id);
