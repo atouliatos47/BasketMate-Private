@@ -63,9 +63,41 @@ const App = {
                 setTimeout(() => this.setupPushNotifications(), 3000);
             }
         } else {
-            // First time user - show language picker
             setTimeout(() => this.showLanguageFirst(), 2000);
         }
+    },
+
+    // ==================== SPLASH SCREEN ====================
+    showSplash() {
+        const splash = document.getElementById('splashScreen');
+        const storesContainer = document.getElementById('splashStores');
+        if (!splash || !storesContainer) return;
+
+        const stores = [
+            { name: 'Tesco', color: '#005EA5', domain: 'tesco.com' },
+            { name: 'Iceland', color: '#D61F26', domain: 'iceland.co.uk' },
+            { name: 'Lidl', color: '#0050AA', domain: 'lidl.co.uk' },
+            { name: "Sainsbury's", color: '#F47920', domain: 'sainsburys.co.uk' },
+            { name: 'B&M', color: '#6B2D8B', domain: 'bmstores.co.uk' },
+            { name: 'Asda', color: '#78BE20', domain: 'asda.com' },
+            { name: 'Morrisons', color: '#00AA4F', domain: 'morrisons.com' },
+            { name: 'M&S', color: '#000000', domain: 'marksandspencer.com' },
+            { name: 'Aldi', color: '#003082', domain: 'aldi.co.uk' },
+            { name: 'Co-op', color: '#00B1A9', domain: 'coop.co.uk' },
+        ];
+
+        storesContainer.innerHTML = stores.map((store, i) => {
+            const initials = store.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+            return `<div class="splash-store" style="animation-delay:${0.4 + i * 0.12}s">
+                <div class="splash-store-avatar" id="splash-avatar-${i}" style="background:white;">
+                    <img src="https://www.google.com/s2/favicons?domain=${store.domain}&sz=128" alt="${store.name}"
+                        data-idx="${i}" data-color="${store.color}" data-initials="${initials}"
+                        onerror="var el=document.getElementById('splash-avatar-'+this.dataset.idx);el.style.background=this.dataset.color;el.innerHTML=this.dataset.initials;"
+                        style="width:36px;height:36px;object-fit:contain;border-radius:4px;">
+                </div>
+                <span class="splash-store-name">${store.name}</span>
+            </div>`;
+        }).join('');
     },
 
     // ==================== TRANSLATIONS ====================
@@ -97,7 +129,6 @@ const App = {
         const homeSub = document.querySelector('.home-sub');
         if (homeSub) homeSub.textContent = t('whereShoppingToday');
 
-        // Render home screen
         UI.renderHome();
     },
 
@@ -159,19 +190,19 @@ const App = {
             <div style="text-align:center;padding:8px 0 16px;">
                 <div style="font-size:48px;margin-bottom:12px;">🛒</div>
                 <h2 style="margin:0 0 6px;font-size:22px;color:#1a1a2e;">${t('welcomeToBasketMate') || 'Welcome to BasketMate'}</h2>
-                <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">${t('createOrJoin')?.replace('\n','<br>') || 'Create a household to get started,<br>or join an existing one with a code.'}</p>
+                <p style="color:#6b7280;font-size:14px;margin:0 0 24px;">Create a household to get started,<br>or join an existing one with a code.</p>
                 <button onclick="App.createHousehold()" style="width:100%;padding:14px;background:#005EA5;color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:12px;">
-                    ✨ ${t('createNewHousehold') || 'Create New Household'}
+                    ✨ Create New Household
                 </button>
                 <div style="position:relative;margin-bottom:12px;">
                     <div style="height:1px;background:#e5e7eb;"></div>
-                    <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:white;padding:0 12px;color:#9ca3af;font-size:13px;">${t('or') || 'or'}</span>
+                    <span style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:white;padding:0 12px;color:#9ca3af;font-size:13px;">or</span>
                 </div>
                 <div style="display:flex;gap:8px;">
-                    <input type="text" id="joinCodeInput" placeholder="${t('enterHouseholdCode') || 'Enter household code'}" maxlength="6"
+                    <input type="text" id="joinCodeInput" placeholder="Enter household code" maxlength="6"
                         style="flex:1;padding:13px 14px;border:1.5px solid #e5e7eb;border-radius:12px;font-size:16px;text-transform:uppercase;letter-spacing:2px;outline:none;text-align:center;"
                         oninput="this.value=this.value.toUpperCase()">
-                    <button onclick="App.joinHousehold()" style="padding:13px 18px;background:#16a34a;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">${t('join') || 'Join'}</button>
+                    <button onclick="App.joinHousehold()" style="padding:13px 18px;background:#16a34a;color:white;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;">Join</button>
                 </div>
                 <p id="householdError" style="color:#dc2626;font-size:13px;margin:8px 0 0;display:none;"></p>
             </div>`;
@@ -181,7 +212,7 @@ const App = {
     async createHousehold() {
         try {
             const btn = document.querySelector('#modal button');
-            if (btn) { btn.disabled = true; btn.textContent = t('creating') || 'Creating...'; }
+            if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
             const data = await API.createHousehold();
             this.showHouseholdCode(data.code);
         } catch(e) {
@@ -258,7 +289,6 @@ const App = {
     startApp() {
         const overlay = document.getElementById('modalOverlay');
         overlay.classList.remove('show');
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) Utils.closeModal(); });
         API.connectSSE();
         API.startKeepAlive();
         setTimeout(() => this.setupPushNotifications(), 3000);
@@ -290,43 +320,6 @@ const App = {
         document.getElementById('modalOverlay').addEventListener('click', (e) => {
             if (e.target === document.getElementById('modalOverlay')) Utils.closeModal();
         });
-    },
-
-    smartHome() {
-        const aislePanel = document.getElementById('aislePanelOverlay');
-        if (aislePanel.classList.contains('show')) { UI.closeAislePanel(); return; }
-        const shopMode = document.getElementById('shoppingModeOverlay');
-        if (!shopMode.classList.contains('hidden')) {
-            this.closeShoppingMode();
-            if (UI.lastAislePanel) setTimeout(() => UI.openAislePanel(UI.lastAislePanel), 50);
-            return;
-        }
-        if (API.currentStoreId) { this.goHome(); return; }
-    },
-
-    showItemAlert(addedBy, itemName, storeName) {
-        const modal = document.getElementById('modal');
-        const overlay = document.getElementById('modalOverlay');
-        modal.innerHTML = `
-            <div style="text-align:center;padding:8px 0 16px;">
-                <div style="font-size:48px;margin-bottom:12px;">🛒</div>
-                <h3 style="margin:0 0 8px;font-size:20px;color:#1a1a2e;">${Utils.escapeHtml(addedBy)} added something!</h3>
-                <p style="color:#6b7280;font-size:16px;margin:0 0 20px;">
-                    <strong style="color:#005EA5;">${Utils.escapeHtml(itemName)}</strong> was added to <strong>${Utils.escapeHtml(storeName)}</strong>
-                </p>
-                <button onclick="Utils.closeModal()" style="width:100%;padding:14px;background:#005EA5;color:white;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer;">OK</button>
-            </div>`;
-        overlay.classList.add('show');
-    },
-
-    showUpgradePrompt(reason) {
-        // Keep your existing upgrade prompt or replace with the one you prefer
-        console.log('Upgrade prompt called');
-        // ... your existing upgrade code here if you want to keep it
-    },
-
-    async triggerPurchase() {
-        // Your existing purchase logic
     },
 
     darken(hex) {
