@@ -1,16 +1,15 @@
 {
-    "id": "https://trolleymate.onrender.com/",
+    "id": "/",
     "name": "BasketMate",
     "short_name": "BasketMate",
-    "description": "Aisle-sorted shopping list for major UK supermarkets",
-    "start_url": "/",
+    "description": "Private shared shopping list for my family",
+    "start_url": "/?source=pwa",
     "scope": "/",
     "display": "standalone",
-    "background_color": "#005EA5",
+    "background_color": "#ffffff",
     "theme_color": "#005EA5",
     "orientation": "portrait-primary",
     "lang": "en-GB",
-    "categories": ["productivity", "utilities", "lifestyle"],
     "icons": [
         {
             "src": "img/icon-192.png",
@@ -29,22 +28,6 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable"
-        }
-    ],
-    "screenshots": [
-        {
-            "src": "img/screenshot-1.png",
-            "sizes": "1280x720",
-            "type": "image/png",
-            "form_factor": "wide",
-            "label": "BasketMate Shopping List"
-        },
-        {
-            "src": "img/screenshot-2.png",
-            "sizes": "720x1280",
-            "type": "image/png",
-            "form_factor": "narrow",
-            "label": "Aisle Sorted View"
         }
     ]
 }
