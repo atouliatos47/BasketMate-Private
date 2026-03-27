@@ -311,10 +311,10 @@
         <div class="shopping-mode-list" id="shoppingModeList"></div>
     </div>
 
-    <!-- Sortable.js for drag & drop -->
+    <!-- Sortable.js -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
 
-    <!-- i18n - MUST load first -->
+    <!-- 1. i18n - Core + Languages (MUST be first) -->
     <script src="/js/i18n/core.js"></script>
     <script src="/js/i18n/lang-en.js"></script>
     <script src="/js/i18n/lang-pl.js"></script>
@@ -325,19 +325,19 @@
     <script src="/js/i18n/lang-bn.js"></script>
     <script src="/js/i18n/lang-zh.js"></script>
 
-    <!-- Core utilities -->
+    <!-- 2. Utilities -->
     <script src="/js/utils.js"></script>
 
-    <!-- API and data layer -->
+    <!-- 3. API layer -->
     <script src="/js/api.js"></script>
 
-    <!-- UI and modules - load BEFORE app.js -->
+    <!-- 4. Modules that depend on App (load BEFORE app.js) -->
     <script src="/js/stores.js"></script>
     <script src="/js/ui.js"></script>
     <script src="/js/settings.js"></script>
     <script src="/js/shopping.js"></script>
 
-    <!-- App - MUST be the VERY LAST script -->
+    <!-- 5. App - MUST BE THE VERY LAST SCRIPT -->
     <script src="/js/app.js"></script>
 
 </body>
