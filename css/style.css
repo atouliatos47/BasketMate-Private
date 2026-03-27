@@ -529,7 +529,7 @@ body {
 }
 
 /* --- 6b. Store Grid --- */
-.store-grid { display: flex; flex-direction: column; gap: 8px; }
+.store-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 
 .store-card {
     background: var(--bg-card);
