@@ -42,16 +42,21 @@ const App = {
         const hasHousehold = API.loadHousehold();
         const savedLanguage = localStorage.getItem('bm_language');
 
-        if (hasHousehold) {
-            API.memberName = localStorage.getItem('bm_member_name') || 'Someone';
+    if (hasHousehold) {
+        API.memberName = localStorage.getItem('bm_member_name') || 'Someone';
 
-            setTimeout(() => {
-                const splash = document.getElementById('splashScreen');
-                if (splash) {
-                    splash.classList.add('fade-out');
-                    setTimeout(() => { splash.style.display = 'none'; }, 600);
-                }
-            }, 1500);
+        setTimeout(() => {
+            const splash = document.getElementById('splashScreen');
+            if (splash) {
+                splash.classList.add('fade-out');
+                setTimeout(() => { splash.style.display = 'none'; }, 600);
+            }
+
+            // === ADD THESE LINES ===
+            document.getElementById('homeScreen').classList.remove('hidden');
+            if (UI && typeof UI.renderHome === 'function') {
+                UI.renderHome();
+            }
 
             if (!savedLanguage) {
                 setTimeout(() => this.showLanguageFirst(), 2000);
@@ -62,7 +67,8 @@ const App = {
                 API.startKeepAlive();
                 setTimeout(() => this.setupPushNotifications(), 3000);
             }
-        } else {
+        }, 1500);
+    } else {
             setTimeout(() => this.showLanguageFirst(), 2000);
         }
     },
@@ -288,7 +294,24 @@ const App = {
 
     startApp() {
         const overlay = document.getElementById('modalOverlay');
-        overlay.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+
+        // === ADD THESE LINES ===
+        const splash = document.getElementById('splashScreen');
+        if (splash) {
+            splash.classList.add('fade-out');
+            setTimeout(() => { splash.style.display = 'none'; }, 600);
+        }
+
+        document.getElementById('homeScreen').classList.remove('hidden');
+
+        // Render the stores on home screen
+        if (UI && typeof UI.renderHome === 'function') {
+            UI.renderHome();
+        } else {
+            console.error('UI.renderHome is not available');
+        }
+
         API.connectSSE();
         API.startKeepAlive();
         setTimeout(() => this.setupPushNotifications(), 3000);
