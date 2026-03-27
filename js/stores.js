@@ -33,9 +33,10 @@ Object.assign(App, {
         document.getElementById('navStoreScreen').classList.remove('hidden');
 
         this.requestWakeLock();
-        App.applyTranslations();
         UI.renderAisles();
         UI.renderList();
+        // Refresh aisles from server in case new store was just seeded
+
     },
 
     goHome() {
@@ -51,11 +52,6 @@ Object.assign(App, {
 
     // ===== ADD STORE =====
     showAddStore() {
-        // Free tier limit — max 3 stores
-        if (!API.hasFullAccess && API.stores.length >= 3) {
-            App.showUpgradePrompt(`You have reached the 3 store limit on the free plan. Upgrade to BasketMate Family to add unlimited stores.`);
-            return;
-        }
         // Store name → auto colour map
         const storeColours = {
             'co-op': '#00B1A9', 'coop': '#00B1A9', 'co op': '#00B1A9',
@@ -128,10 +124,10 @@ Object.assign(App, {
         try {
             await API.addStore({ name, emoji, color });
             Utils.closeModal();
-            Utils.showToast(t('storeAdded', emoji, name));
+            Utils.showToast(`${emoji} ${name} added! ✓`);
         } catch(e) {
             Utils.closeModal();
-            Utils.showToast(t('storeAdded', emoji, name));
+            Utils.showToast(`${emoji} ${name} added! ✓`);
         }
     },
 
@@ -155,8 +151,8 @@ Object.assign(App, {
         try {
             await API.deleteStore(storeId);
             Utils.closeModal();
-            Utils.showToast(t('storeDeleted'));
-        } catch(e) { Utils.showToast(t('failedToRemove'), true); }
+            Utils.showToast('Store deleted');
+        } catch(e) { Utils.showToast('Failed to delete store', true); }
     },
 
     // ===== CLEAR CHECKED =====

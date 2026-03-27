@@ -1,29 +1,29 @@
-const http = require('http');
-const fs = require('fs').promises;
-const path = require('path');
-const url = require('url');
+const http    = require('http');
+const fs      = require('fs').promises;
+const path    = require('path');
+const url     = require('url');
 const { Pool } = require('pg');
 const webpush = require('web-push');
 
-const PORT = process.env.PORT || 3000;
+const PORT         = process.env.PORT || 3000;
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
-const APP_DIR = __dirname;
+const APP_DIR      = __dirname;
 
 webpush.setVapidDetails(process.env.VAPID_EMAIL, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 const DEFAULT_AISLES = [
-    { name: '🥖 Bakery', sort_order: 1, products: ['White Bread', 'Brown Bread', 'Sourdough', 'Croissants', 'Bagels', 'Crumpets', 'Pitta Bread', 'Wraps', 'Bread Rolls', 'Muffins'] },
-    { name: '🥦 Fresh Food', sort_order: 2, products: ['Milk', 'Butter', 'Cheddar', 'Eggs', 'Yoghurt', 'Chicken Breast', 'Minced Beef', 'Bacon', 'Sausages', 'Salmon Fillet', 'Bananas', 'Apples', 'Potatoes', 'Carrots', 'Broccoli', 'Tomatoes', 'Onions', 'Peppers', 'Cucumber', 'Strawberries'] },
-    { name: '🧊 Frozen Food', sort_order: 3, products: ['Frozen Peas', 'Chips', 'Fish Fingers', 'Pizza', 'Ice Cream', 'Waffles', 'Frozen Chicken', 'Frozen Veg Mix'] },
-    { name: '🍫 Treats & Snacks', sort_order: 4, products: ['Chocolate', 'Crisps', 'Biscuits', 'Sweets', 'Nuts', 'Popcorn', 'Cereal Bars', 'Crackers'] },
-    { name: '🥫 Food Cupboard', sort_order: 5, products: ['Pasta', 'Rice', 'Baked Beans', 'Chopped Tomatoes', 'Tuna', 'Soup', 'Porridge Oats', 'Cornflakes', 'Weetabix', 'Coffee', 'Tea', 'Squash', 'Ketchup', 'Mayo', 'Olive Oil'] },
-    { name: '🧃 Drinks', sort_order: 6, products: ['Water', 'Coca Cola', 'Pepsi', 'Lemonade', 'Orange Juice', 'Energy Drink', 'Beer', 'Wine'] },
-    { name: '👶 Baby & Toddler', sort_order: 7, products: ['Nappies', 'Baby Wipes', 'Baby Food', 'Formula Milk', 'Baby Shampoo', 'Nappy Bags'] },
-    { name: '💊 Health & Beauty', sort_order: 8, products: ['Shampoo', 'Shower Gel', 'Toothpaste', 'Deodorant', 'Moisturiser', 'Razors', 'Paracetamol', 'Vitamins'] },
-    { name: '🐾 Pets', sort_order: 9, products: ['Dog Food', 'Cat Food', 'Cat Litter', 'Dog Treats', 'Pet Shampoo', 'Bird Seed'] },
-    { name: '🧹 Household', sort_order: 10, products: ['Washing Up Liquid', 'Dishwasher Tablets', 'Laundry Tablets', 'Bin Bags', 'Kitchen Roll', 'Toilet Roll', 'Bleach', 'Surface Spray'] },
+    { name: '🥖 Bakery',           sort_order: 1,  products: ['White Bread', 'Brown Bread', 'Sourdough', 'Croissants', 'Bagels', 'Crumpets', 'Pitta Bread', 'Wraps', 'Bread Rolls', 'Muffins'] },
+    { name: '🥦 Fresh Food',        sort_order: 2,  products: ['Milk', 'Butter', 'Cheddar', 'Eggs', 'Yoghurt', 'Chicken Breast', 'Minced Beef', 'Bacon', 'Sausages', 'Salmon Fillet', 'Bananas', 'Apples', 'Potatoes', 'Carrots', 'Broccoli', 'Tomatoes', 'Onions', 'Peppers', 'Cucumber', 'Strawberries'] },
+    { name: '🧊 Frozen Food',       sort_order: 3,  products: ['Frozen Peas', 'Chips', 'Fish Fingers', 'Pizza', 'Ice Cream', 'Waffles', 'Frozen Chicken', 'Frozen Veg Mix'] },
+    { name: '🍫 Treats & Snacks',   sort_order: 4,  products: ['Chocolate', 'Crisps', 'Biscuits', 'Sweets', 'Nuts', 'Popcorn', 'Cereal Bars', 'Crackers'] },
+    { name: '🥫 Food Cupboard',     sort_order: 5,  products: ['Pasta', 'Rice', 'Baked Beans', 'Chopped Tomatoes', 'Tuna', 'Soup', 'Porridge Oats', 'Cornflakes', 'Weetabix', 'Coffee', 'Tea', 'Squash', 'Ketchup', 'Mayo', 'Olive Oil'] },
+    { name: '🧃 Drinks',            sort_order: 6,  products: ['Water', 'Coca Cola', 'Pepsi', 'Lemonade', 'Orange Juice', 'Energy Drink', 'Beer', 'Wine'] },
+    { name: '👶 Baby & Toddler',    sort_order: 7,  products: ['Nappies', 'Baby Wipes', 'Baby Food', 'Formula Milk', 'Baby Shampoo', 'Nappy Bags'] },
+    { name: '💊 Health & Beauty',   sort_order: 8,  products: ['Shampoo', 'Shower Gel', 'Toothpaste', 'Deodorant', 'Moisturiser', 'Razors', 'Paracetamol', 'Vitamins'] },
+    { name: '🐾 Pets',              sort_order: 9,  products: ['Dog Food', 'Cat Food', 'Cat Litter', 'Dog Treats', 'Pet Shampoo', 'Bird Seed'] },
+    { name: '🧹 Household',         sort_order: 10, products: ['Washing Up Liquid', 'Dishwasher Tablets', 'Laundry Tablets', 'Bin Bags', 'Kitchen Roll', 'Toilet Roll', 'Bleach', 'Surface Spray'] },
 ];
 
 function generateCode() {
@@ -33,7 +33,7 @@ function generateCode() {
 
 function mapStore(row) { return { id: row.id, name: row.name, color: row.color, emoji: row.emoji, sortOrder: row.sort_order }; }
 function mapAisle(row) { return { id: row.id, householdId: row.household_id, storeId: row.store_id, name: row.name, sortOrder: row.sort_order, products: row.products || [] }; }
-function mapItem(row) { return { id: row.id, householdId: row.household_id, storeId: row.store_id, name: row.name, aisleId: row.aisle_id, quantity: row.quantity, isFavourite: row.is_favourite, isChecked: row.is_checked, addedAt: row.added_at, addedBy: row.added_by || null }; }
+function mapItem(row)  { return { id: row.id, householdId: row.household_id, storeId: row.store_id, name: row.name, aisleId: row.aisle_id, quantity: row.quantity, isFavourite: row.is_favourite, isChecked: row.is_checked, addedAt: row.added_at, addedBy: row.added_by || null }; }
 
 async function getBody(req) {
     return new Promise((resolve, reject) => {
@@ -124,11 +124,11 @@ async function initDb() {
 }
 
 const householdsRoute = require('./routes/households')(pool, generateCode, seedAisles, getBody);
-const storesRoute = require('./routes/stores')(pool, clients, mapStore, getBody, DEFAULT_AISLES);
-const aislesRoute = require('./routes/aisles')(pool, broadcast, mapAisle, getBody);
-const itemsRoute = require('./routes/items')(pool, broadcast, mapItem, getBody, webpush);
+const storesRoute     = require('./routes/stores')(pool, clients, mapStore, getBody, DEFAULT_AISLES);
+const aislesRoute     = require('./routes/aisles')(pool, broadcast, mapAisle, getBody);
+const itemsRoute      = require('./routes/items')(pool, broadcast, mapItem, getBody, webpush);
 const favouritesRoute = require('./routes/favourites')(pool, broadcast, getBody);
-const pushRoute = require('./routes/push')(pool, getBody);
+const pushRoute       = require('./routes/push')(pool, getBody);
 
 const server = http.createServer(async (req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -138,15 +138,15 @@ const server = http.createServer(async (req, res) => {
     const method = req.method;
 
     if (pathname === '/' || pathname === '/index.html') return serveFile(res, path.join(APP_DIR, 'index.html'), 'text/html');
-    if (pathname.startsWith('/css/')) return serveFile(res, path.join(APP_DIR, pathname), 'text/css');
+    if (pathname.startsWith('/css/'))  return serveFile(res, path.join(APP_DIR, pathname), 'text/css');
     if (pathname.startsWith('/js/') && pathname.endsWith('.js')) return serveFile(res, path.join(APP_DIR, pathname), 'application/javascript');
-    if (pathname.startsWith('/img/')) return serveFile(res, path.join(APP_DIR, pathname), 'image/png');
+    if (pathname.startsWith('/img/'))  return serveFile(res, path.join(APP_DIR, pathname), 'image/png');
     if (pathname === '/manifest.json') return serveFile(res, path.join(APP_DIR, 'manifest.json'), 'application/manifest+json');
-    if (pathname === '/sw.js') return serveFile(res, path.join(APP_DIR, 'sw.js'), 'application/javascript');
+    if (pathname === '/sw.js')         return serveFile(res, path.join(APP_DIR, 'sw.js'), 'application/javascript');
     if (pathname === '/privacy.html' || pathname === '/privacy') return serveFile(res, path.join(APP_DIR, 'privacy.html'), 'text/html');
 
     if (pathname === '/households/create' && method === 'POST') return householdsRoute.create(req, res);
-    if (pathname === '/households/join' && method === 'POST') return householdsRoute.join(req, res);
+    if (pathname === '/households/join'   && method === 'POST') return householdsRoute.join(req, res);
 
     if (pathname === '/events' && method === 'GET') {
         const householdId = parseInt(p.query.householdId);
@@ -193,24 +193,24 @@ const server = http.createServer(async (req, res) => {
 
             res.writeHead(200);
             return res.end(JSON.stringify({ success: true, isPremium: true }));
-        } catch (e) {
+        } catch(e) {
             console.error('Purchase verify error:', e);
             res.writeHead(500);
             return res.end(JSON.stringify({ error: 'Upgrade failed' }));
         }
     }
 
-    if (pathname === '/stores' && method === 'GET') return storesRoute.getAll(req, res);
+    if (pathname === '/stores' && method === 'GET')  return storesRoute.getAll(req, res);
     if (pathname === '/stores' && method === 'POST') return storesRoute.add(req, res);
     const delStoreMatch = pathname.match(/^\/stores\/(\d+)\/delete$/);
     if (delStoreMatch && method === 'POST') return storesRoute.remove(req, res, parseInt(delStoreMatch[1]));
 
-    if (pathname === '/push/vapid-key' && method === 'GET') return pushRoute.getVapidKey(req, res);
-    if (pathname === '/push/subscribe' && method === 'POST') return pushRoute.subscribe(req, res);
+    if (pathname === '/push/vapid-key'      && method === 'GET')  return pushRoute.getVapidKey(req, res);
+    if (pathname === '/push/subscribe'       && method === 'POST') return pushRoute.subscribe(req, res);
     if (pathname === '/push/shopping-status' && method === 'POST') return pushRoute.shoppingStatus(req, res);
 
-    if (pathname === '/aisles' && method === 'GET') return aislesRoute.getAll(req, res, p);
-    if (pathname === '/aisles' && method === 'POST') return aislesRoute.add(req, res);
+    if (pathname === '/aisles'         && method === 'GET')  return aislesRoute.getAll(req, res, p);
+    if (pathname === '/aisles'         && method === 'POST') return aislesRoute.add(req, res);
     if (pathname === '/aisles/reorder' && method === 'POST') return aislesRoute.reorder(req, res);
     const addProductMatch = pathname.match(/^\/aisles\/(\d+)\/products$/);
     if (addProductMatch && method === 'POST') return aislesRoute.addProduct(req, res, parseInt(addProductMatch[1]));
@@ -219,20 +219,20 @@ const server = http.createServer(async (req, res) => {
     const delAisleMatch = pathname.match(/^\/aisles\/(\d+)\/delete$/);
     if (delAisleMatch && method === 'POST') return aislesRoute.remove(req, res, parseInt(delAisleMatch[1]));
 
-    if (pathname === '/items' && method === 'GET') return itemsRoute.getAll(req, res, p);
-    if (pathname === '/items' && method === 'POST') return itemsRoute.add(req, res);
+    if (pathname === '/items'               && method === 'GET')  return itemsRoute.getAll(req, res, p);
+    if (pathname === '/items'               && method === 'POST') return itemsRoute.add(req, res);
     if (pathname === '/items/clear-checked' && method === 'POST') return itemsRoute.clearChecked(req, res);
-    const qtyMatch = pathname.match(/^\/items\/(\d+)\/quantity$/);
-    if (qtyMatch && method === 'POST') return itemsRoute.updateQuantity(req, res, parseInt(qtyMatch[1]));
+    const qtyMatch   = pathname.match(/^\/items\/(\d+)\/quantity$/);
+    if (qtyMatch   && method === 'POST') return itemsRoute.updateQuantity(req, res, parseInt(qtyMatch[1]));
     const checkMatch = pathname.match(/^\/items\/(\d+)\/check$/);
     if (checkMatch && method === 'POST') return itemsRoute.toggleCheck(req, res, parseInt(checkMatch[1]));
-    const favMatch = pathname.match(/^\/items\/(\d+)\/favourite$/);
-    if (favMatch && method === 'POST') return itemsRoute.toggleFavourite(req, res, parseInt(favMatch[1]));
-    const delMatch = pathname.match(/^\/items\/(\d+)\/delete$/);
-    if (delMatch && method === 'POST') return itemsRoute.remove(req, res, parseInt(delMatch[1]));
+    const favMatch   = pathname.match(/^\/items\/(\d+)\/favourite$/);
+    if (favMatch   && method === 'POST') return itemsRoute.toggleFavourite(req, res, parseInt(favMatch[1]));
+    const delMatch   = pathname.match(/^\/items\/(\d+)\/delete$/);
+    if (delMatch   && method === 'POST') return itemsRoute.remove(req, res, parseInt(delMatch[1]));
 
-    if (pathname === '/favourites' && method === 'GET') return favouritesRoute.getAll(req, res, p);
-    if (pathname === '/favourites' && method === 'POST') return favouritesRoute.add(req, res);
+    if (pathname === '/favourites'        && method === 'GET')  return favouritesRoute.getAll(req, res, p);
+    if (pathname === '/favourites'        && method === 'POST') return favouritesRoute.add(req, res);
     if (pathname === '/favourites/delete' && method === 'POST') return favouritesRoute.remove(req, res);
 
     if (pathname === '/.well-known/assetlinks.json') {

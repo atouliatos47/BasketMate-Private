@@ -4,30 +4,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title data-i18n="appName">BasketMate</title>
-
+    <title>BasketMate</title>
     <meta name="theme-color" content="#005EA5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="BasketMate">
-
     <link rel="manifest" href="/manifest.json">
-
-    <link rel="icon" href="/img/icon-192.png" type="image/png">
     <link rel="apple-touch-icon" sizes="180x180" href="/img/icon-180.png">
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="/css/style.css">
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js');</script>
+    <link rel="icon" type="image/png" href="/img/icon-192.png">
 
-    <!-- Service Worker Registration -->
-    <script>
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/sw.js')
-                .catch(err => console.log('Service Worker registration failed:', err));
-        }
-    </script>
 </head>
 
 <body>
@@ -36,8 +26,8 @@
     <div id="splashScreen">
         <div class="splash-logo">
             <img src="/img/icon-192.png" alt="BasketMate" class="splash-icon">
-            <div class="splash-title" data-i18n="appName">Basket<span>Mate</span></div>
-            <div class="splash-sub" data-i18n="tagline">Your smart shopping companion</div>
+            <div class="splash-title">Basket<span>Mate</span></div>
+            <div class="splash-sub">Your smart shopping companion</div>
         </div>
         <div class="splash-stores" id="splashStores">
             <!-- Store logos injected by JS -->
@@ -45,16 +35,16 @@
         <div class="splash-loader">
             <div class="splash-bar"></div>
         </div>
-        <div class="splash-brand" data-i18n="byAtStudios">by <span>AtStudios</span></div>
+        <div class="splash-brand">by <span>AtStudios</span></div>
     </div>
 
     <!-- ===== HOME SCREEN ===== -->
-    <div id="homeScreen">
+    <div id="homeScreen" class="hidden">
 
         <div class="home-header">
-            <div class="home-title" data-i18n="appName">🛒 BasketMate</div>
+            <div class="home-title">🛒 BasketMate</div>
             <div style="display:flex;align-items:center;gap:10px;">
-                <div class="connection-badge" id="connectionBadge" data-i18n="connectingStatus">○ Connecting</div>
+                <div class="connection-badge" id="connectionBadge">○ Connecting</div>
                 <button class="settings-btn" onclick="App.showSettings()">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                         stroke-linecap="round" stroke-linejoin="round">
@@ -67,7 +57,7 @@
         </div>
 
         <div class="home-content">
-            <p class="home-sub" data-i18n="whereShoppingToday">Where are you shopping today?</p>
+            <p class="home-sub">Where are you shopping today?</p>
             <div class="store-grid" id="storeGrid">
                 <!-- Store cards rendered here -->
             </div>
@@ -79,7 +69,7 @@
     <div class="settings-overlay" id="settingsOverlay" onclick="App.closeSettings()"></div>
     <div class="settings-panel" id="settingsPanel">
         <div class="settings-header">
-            <span class="settings-title" id="settingsTitleText" data-i18n="settingsTitle">⚙️ Settings</span>
+            <span class="settings-title">⚙️ Settings</span>
             <button class="settings-close" onclick="App.closeSettings()">✕</button>
         </div>
         <div class="settings-body">
@@ -94,10 +84,8 @@
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsMyCodeTitle" data-i18n="myHouseholdCode">My Household
-                        Code</div>
-                    <div class="settings-item-sub" id="settingsMyCodeSub" data-i18n="shareWithFamily">Share with family
-                        to join your list</div>
+                    <div class="settings-item-title">My Household Code</div>
+                    <div class="settings-item-sub">Share with family to join your list</div>
                 </div>
                 <span class="settings-item-arrow">›</span>
             </div>
@@ -110,10 +98,8 @@
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsChangeNameTitle" data-i18n="changeMyName">Change My
-                        Name</div>
-                    <div class="settings-item-sub" id="currentNameSub" data-i18n="yourNameOnSharedLists">Your name on
-                        shared lists</div>
+                    <div class="settings-item-title">Change My Name</div>
+                    <div class="settings-item-sub" id="currentNameSub">Your name on shared lists</div>
                 </div>
                 <span class="settings-item-arrow">›</span>
             </div>
@@ -121,17 +107,15 @@
             <div class="settings-item" onclick="App.showSwitchHousehold()">
                 <div class="settings-item-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                        <circle cx="9" cy="7" r="4" />
-                        <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
-                        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsJoinTitle" data-i18n="joinAHousehold">Join a Household
-                    </div>
-                    <div class="settings-item-sub" id="settingsJoinSub" data-i18n="enterPartnerCode">Enter a partner's
-                        code to share their list</div>
+                    <div class="settings-item-title">Join a Household</div>
+                    <div class="settings-item-sub">Enter a partner's code to share their list</div>
                 </div>
                 <span class="settings-item-arrow">›</span>
             </div>
@@ -141,39 +125,18 @@
             <div class="settings-item" onclick="App.toggleSilentMode()">
                 <div class="settings-item-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M11 5L6 9H2v6h4l5 4V5z" />
-                        <line x1="23" y1="9" x2="17" y2="15" />
-                        <line x1="17" y1="9" x2="23" y2="15" />
+                        <path d="M11 5L6 9H2v6h4l5 4V5z"/>
+                        <line x1="23" y1="9" x2="17" y2="15"/>
+                        <line x1="17" y1="9" x2="23" y2="15"/>
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsSilentTitle" data-i18n="silentMode">Silent Mode</div>
-                    <div class="settings-item-sub" id="silentModeSub" data-i18n="muteSounds">Mute item ping sounds</div>
+                    <div class="settings-item-title">Silent Mode</div>
+                    <div class="settings-item-sub" id="silentModeSub">Mute item ping sounds</div>
                 </div>
-                <div id="silentModeToggle"
-                    style="width:44px;height:24px;border-radius:12px;background:#e5e7eb;position:relative;transition:background 0.2s;flex-shrink:0;">
-                    <div id="silentModeThumb"
-                        style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);">
-                    </div>
+                <div id="silentModeToggle" style="width:44px;height:24px;border-radius:12px;background:#e5e7eb;position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div id="silentModeThumb" style="width:20px;height:20px;border-radius:50%;background:white;position:absolute;top:2px;left:2px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2);"></div>
                 </div>
-            </div>
-
-            <div class="settings-divider"></div>
-
-            <div class="settings-item" onclick="App.showLanguageSelector()">
-                <div class="settings-item-icon">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="2" y1="12" x2="22" y2="12" />
-                        <path
-                            d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                    </svg>
-                </div>
-                <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsLanguageTitle" data-i18n="language">Language</div>
-                    <div class="settings-item-sub" id="currentLanguageSub">English 🇬🇧</div>
-                </div>
-                <span class="settings-item-arrow">›</span>
             </div>
 
             <div class="settings-divider"></div>
@@ -187,10 +150,8 @@
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="settingsHelpTitle" data-i18n="howToUse">How to Use BasketMate
-                    </div>
-                    <div class="settings-item-sub" id="settingsHelpSub" data-i18n="tipsGuide">Tips and features guide
-                    </div>
+                    <div class="settings-item-title">How to Use BasketMate</div>
+                    <div class="settings-item-sub">Tips and features guide</div>
                 </div>
                 <span class="settings-item-arrow">›</span>
             </div>
@@ -200,22 +161,19 @@
             <div class="settings-item" id="upgradeSettingsItem" onclick="App.showUpgradePrompt()">
                 <div class="settings-item-icon" style="background:#fef3c7;">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2">
-                        <polygon
-                            points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                     </svg>
                 </div>
                 <div class="settings-item-text">
-                    <div class="settings-item-title" id="upgradeSettingsTitle" data-i18n="upgradeToFamily">Upgrade to
-                        Family</div>
-                    <div class="settings-item-sub" id="upgradeSettingsSub" data-i18n="upgradeSub">£2.99 one-time —
-                        unlimited everything</div>
+                    <div class="settings-item-title" id="upgradeSettingsTitle">Upgrade to Family</div>
+                    <div class="settings-item-sub" id="upgradeSettingsSub">£2.99 one-time — unlimited everything</div>
                 </div>
                 <span class="settings-item-arrow">›</span>
             </div>
 
             <div class="settings-footer">
-                <div data-i18n="version">BasketMate v1.0</div>
-                <div data-i18n="byAtStudios">by <strong>AtStudios</strong></div>
+                <div>BasketMate v1.0</div>
+                <div>by <strong>AtStudios</strong></div>
             </div>
 
         </div>
@@ -227,6 +185,7 @@
         <div class="store-header">
             <span class="store-title" id="storeTitle"></span>
             <span class="stats-bar" id="statsBar"></span>
+
         </div>
 
         <div class="main-layout">
@@ -234,9 +193,8 @@
             <!-- LEFT: AISLES -->
             <div class="aisles-panel">
                 <div class="panel-header">
-                    <h2 id="aislesHeader" data-i18n="aisles">🏪 Aisles</h2>
-                    <span class="panel-sub" id="aislesSubHeader" data-i18n="tapAisleToAdd">Tap an aisle to add
-                        products</span>
+                    <h2>🏪 Aisles</h2>
+                    <span class="panel-sub">Tap an aisle to add products</span>
                 </div>
                 <div class="aisles-container" id="aislesContainer"></div>
             </div>
@@ -245,12 +203,8 @@
             <div class="list-panel">
                 <div class="panel-header">
                     <div class="list-tabs">
-                        <button class="list-tab active" id="tabList" onclick="UI.switchListTab('list')">
-                            📋 <span id="tabListLabel" data-i18n="myList">List</span>
-                        </button>
-                        <button class="list-tab" id="tabFavs" onclick="UI.switchListTab('favs')">
-                            ⭐ <span id="tabFavsLabel" data-i18n="favourites">Favourites</span>
-                        </button>
+                        <button class="list-tab active" id="tabList" onclick="UI.switchListTab('list')">📋 List</button>
+                        <button class="list-tab" id="tabFavs" onclick="UI.switchListTab('favs')">⭐ Favourites</button>
                     </div>
                 </div>
                 <div class="list-container" id="listContainer"></div>
@@ -290,7 +244,7 @@
                         <rect x="14" y="14" width="4" height="4" rx="1" />
                     </svg>
                 </div>
-                <span class="nav-label" id="navLabelMyCode" data-i18n="myCode">My Code</span>
+                <span class="nav-label">My Code</span>
             </button>
             <button class="nav-btn-home" onclick="App.smartHome()">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
@@ -300,15 +254,14 @@
             </button>
             <button class="nav-btn-add" onclick="App.showAddStore()">
                 <div class="nav-icon-wrap">➕</div>
-                <span class="nav-label" id="navLabelAddStore" data-i18n="addStore">Add Store</span>
+                <span class="nav-label">Add Store</span>
             </button>
         </div>
-
         <!-- STORE SCREEN NAV -->
         <div class="nav-store-screen hidden" id="navStoreScreen">
             <button class="nav-btn-shop" id="navBtnShop" onclick="App.openShoppingMode()">
                 <div class="nav-icon-wrap">🛒</div>
-                <span class="nav-label" id="navLabelMyList2" data-i18n="myList">My List</span>
+                <span class="nav-label">My List</span>
             </button>
             <button class="nav-btn-back" onclick="App.smartHome()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
@@ -317,7 +270,6 @@
                 </svg>
             </button>
         </div>
-
         <!-- SHOPPING MODE NAV -->
         <div class="nav-store-screen hidden" id="navShoppingMode">
             <button class="nav-btn-back" onclick="App.closeShoppingMode()">
@@ -327,12 +279,11 @@
                 </svg>
             </button>
         </div>
-
         <!-- AISLE PANEL NAV -->
         <div class="nav-aisle-panel hidden" id="navAislePanel">
             <button class="nav-btn-shop" onclick="App.openShoppingMode()">
                 <div class="nav-icon-wrap">🛒</div>
-                <span class="nav-label" id="navLabelMyList3" data-i18n="myList">My List</span>
+                <span class="nav-label">My List</span>
             </button>
             <button class="nav-btn-back" onclick="App.smartHome()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
@@ -342,7 +293,7 @@
             </button>
             <button class="nav-btn-add-product" id="navBtnAddProduct" onclick="UI.showAddProductInput()">
                 <div class="nav-icon-wrap">➕</div>
-                <span class="nav-label" id="navLabelAddProduct" data-i18n="addProduct">Add Product</span>
+                <span class="nav-label">Add Product</span>
             </button>
         </div>
     </div>
@@ -351,27 +302,16 @@
     <div class="shopping-mode-overlay hidden" id="shoppingModeOverlay">
         <div class="shopping-mode-header">
             <div class="shopping-mode-header-top">
-                <span class="shopping-mode-label" id="shoppingModeLabel" data-i18n="shoppingList">🛒 Shopping
-                    List</span>
+                <span class="shopping-mode-label">🛒 Shopping List</span>
                 <span class="shopping-mode-stats" id="shoppingModeStats"></span>
+
             </div>
             <span class="shopping-mode-title" id="shoppingModeTitle"></span>
         </div>
         <div class="shopping-mode-list" id="shoppingModeList"></div>
     </div>
 
-    <!-- ====================== SCRIPTS ====================== -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
-
-    <!-- i18n -->
-    <script src="/js/i18n/core.js"></script>
-    <script src="/js/i18n/lang-en.js"></script>
-    <script src="/js/i18n/lang-el.js"></script>
-    <!-- Add more languages when ready -->
-    <!-- <script src="/js/i18n/lang-ro.js"></script> -->
-    <!-- <script src="/js/i18n/lang-pl.js"></script> -->
-
-    <!-- Core application scripts -->
     <script src="/js/utils.js"></script>
     <script src="/js/api.js"></script>
     <script src="/js/ui.js"></script>
