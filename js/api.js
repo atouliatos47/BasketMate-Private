@@ -8,25 +8,12 @@ const API = {
     householdCode: null,
     memberName: 'Someone',
     eventSource: null,
-    isPremium: false,
+    isPremium: true,
     trialStartedAt: null,
 
-    get isTrialActive() {
-        if (this.isPremium) return true;
-        if (!this.trialStartedAt) return false;
-        const trialEnd = new Date(this.trialStartedAt).getTime() + (15 * 24 * 60 * 60 * 1000);
-        return Date.now() < trialEnd;
-    },
-
-    get trialDaysLeft() {
-        if (!this.trialStartedAt) return 0;
-        const trialEnd = new Date(this.trialStartedAt).getTime() + (15 * 24 * 60 * 60 * 1000);
-        return Math.max(0, Math.ceil((trialEnd - Date.now()) / (24 * 60 * 60 * 1000)));
-    },
-
-    get hasFullAccess() {
-        return this.isPremium || this.isTrialActive;
-    },
+    get isTrialActive() { return true; },
+    get trialDaysLeft() { return 999; },
+    get hasFullAccess() { return true; },
 
     get storeAisles() {
         return this.aisles.filter(a => a.storeId === this.currentStoreId);
@@ -40,7 +27,6 @@ const API = {
         return this.favourites.filter(f => f.store_id === this.currentStoreId);
     },
 
-    // ===== HOUSEHOLD =====
     async createHousehold() {
         const r = await fetch('/households/create', { method: 'POST' });
         if (!r.ok) throw new Error('Failed to create household');
@@ -49,10 +35,6 @@ const API = {
         this.householdCode = data.code;
         localStorage.setItem('bm_household_id', data.id);
         localStorage.setItem('bm_household_code', data.code);
-        // Start 15-day trial from creation
-        const trialStart = new Date().toISOString();
-        localStorage.setItem('bm_trial_started', trialStart);
-        this.trialStartedAt = trialStart;
         return data;
     },
 
@@ -82,7 +64,6 @@ const API = {
         return false;
     },
 
-    // ===== SSE =====
     connectSSE() {
         if (this.eventSource) {
             this.eventSource.close();
@@ -101,11 +82,7 @@ const API = {
             this.aisles     = data.aisles;
             this.items      = data.items;
             this.favourites = data.favourites || [];
-            this.isPremium  = data.isPremium || false;
-            // Use server-provided trial start (more secure than localStorage)
-            this.trialStartedAt = data.trialStartedAt || localStorage.getItem('bm_trial_started');
-            console.log('Init:', this.stores.length, 'stores,', this.aisles.length, 'aisles,', this.items.length, 'items', '| Premium:', this.isPremium, '| Trial days left:', this.trialDaysLeft);
-            // Private instance — no restrictions
+            console.log('Init:', this.stores.length, 'stores,', this.aisles.length, 'aisles,', this.items.length, 'items | Private build — full access');
             UI.renderHome();
             UI.renderTrialBanner();
             const badge = document.getElementById('connectionBadge');
@@ -149,7 +126,6 @@ const API = {
             this.items.push(item);
             if (item.storeId === this.currentStoreId) UI.renderList();
             UI.renderHome();
-            // Only show in-app alert if shopping mode is currently open AND someone else added it
             const shoppingMode = document.getElementById('shoppingModeOverlay');
             const isShoppingModeOpen = shoppingMode && !shoppingMode.classList.contains('hidden');
             if (isShoppingModeOpen && item.addedBy && item.addedBy !== this.memberName) {
@@ -194,19 +170,11 @@ const API = {
             UI.renderFavourites();
         });
 
-        this.eventSource.addEventListener('premiumUpgraded', (e) => {
-            this.isPremium = true;
-            UI.renderHome();
-            UI.renderTrialBanner();
-            Utils.showToast('🎉 Welcome to BasketMate Family!');
-        });
-
         this.eventSource.onerror = () => {
             const badge = document.getElementById('connectionBadge');
             if (badge) { badge.textContent = '○ Offline'; badge.style.color = 'rgba(255,255,255,0.5)'; }
             this.eventSource.close();
             this.eventSource = null;
-            // Exponential backoff — max 30 seconds
             const delay = Math.min(3000 * (this._reconnectCount || 1), 30000);
             this._reconnectCount = (this._reconnectCount || 1) + 1;
             this._reconnectTimer = setTimeout(() => this.connectSSE(), delay);
@@ -215,13 +183,11 @@ const API = {
         this.eventSource.onopen = () => {
             const badge = document.getElementById('connectionBadge');
             if (badge) { badge.textContent = '● Live'; badge.style.color = ''; }
-            // Reset reconnect counter on successful connection
             this._reconnectCount = 1;
             clearTimeout(this._reconnectTimer);
         };
     },
 
-    // ===== STORE METHODS =====
     async addStore(data) {
         const r = await fetch('/stores', {
             method: 'POST',
@@ -238,7 +204,6 @@ const API = {
         return await r.json();
     },
 
-    // ===== AISLE METHODS =====
     async addAisle(name) {
         const r = await fetch('/aisles', {
             method: 'POST',
@@ -309,7 +274,6 @@ const API = {
         return await r.json();
     },
 
-    // ===== ITEM METHODS =====
     async addItem(data) {
         const r = await fetch('/items', {
             method: 'POST',
@@ -350,17 +314,9 @@ const API = {
         return await r.json();
     },
 
-    applyFreeTierRestrictions() { /* Disabled in private instance */ },
+    applyFreeTierRestrictions() { /* Disabled — private build */ },
 
-    async verifyPurchase(purchaseToken) {
-        const r = await fetch('/purchase/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ householdId: this.householdId, purchaseToken })
-        });
-        if (!r.ok) throw new Error('Purchase verification failed');
-        return await r.json();
-    },
+    async verifyPurchase(purchaseToken) { return { success: true }; },
 
     startKeepAlive() {
         setInterval(() => {
