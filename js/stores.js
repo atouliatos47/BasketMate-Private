@@ -2,12 +2,8 @@
 // stores.js — Store selection, add/delete, clear
 // ===================================================
 
-// Safety guard - prevent errors if App is not yet loaded
-if (typeof App === 'undefined') {
-    console.warn('stores.js: App not ready yet. Waiting for app.js...');
-}
-
-Object.assign(App || window, {
+// Extend the main App object (app.js loads before this file now)
+Object.assign(App, {
 
     // ===== STORE SELECTION =====
     enterStore(storeId) {
@@ -16,7 +12,7 @@ Object.assign(App || window, {
         API.currentStoreId = storeId;
 
         document.documentElement.style.setProperty('--store-color', store.color);
-        document.documentElement.style.setProperty('--store-color-dark', (App && App.darken) ? App.darken(store.color) : '#003d6b');
+        document.documentElement.style.setProperty('--store-color-dark', App.darken ? App.darken(store.color) : '#003d6b');
         document.documentElement.style.setProperty('--accent', store.color);
         document.documentElement.style.setProperty('--accent-dim', store.color + '20');
         document.documentElement.style.setProperty('--home-btn-color', store.color);
@@ -38,7 +34,7 @@ Object.assign(App || window, {
         document.getElementById('navHomeScreen').classList.add('hidden');
         document.getElementById('navStoreScreen').classList.remove('hidden');
 
-        if (App && App.requestWakeLock) App.requestWakeLock();
+        if (App.requestWakeLock) App.requestWakeLock();
         if (UI) {
             UI.renderAisles();
             UI.renderList();
@@ -53,13 +49,13 @@ Object.assign(App || window, {
         document.getElementById('navAislePanel').classList.add('hidden');
         document.getElementById('navHomeScreen').classList.remove('hidden');
         document.getElementById('aislePanelOverlay').classList.remove('show');
-        if (App && App.releaseWakeLock) App.releaseWakeLock();
+        if (App.releaseWakeLock) App.releaseWakeLock();
     },
 
     // ===== ADD STORE =====
     showAddStore() {
         if (!API.hasFullAccess && API.stores.length >= 3) {
-            if (App && App.showUpgradePrompt) {
+            if (App.showUpgradePrompt) {
                 App.showUpgradePrompt('You have reached the 3 store limit on the free plan. Upgrade to BasketMate Family to add unlimited stores.');
             }
             return;
@@ -107,7 +103,7 @@ Object.assign(App || window, {
             </div>`;
         overlay.classList.add('show');
         setTimeout(() => document.getElementById('newStoreName').focus(), 100);
-        if (App && App.selectStoreColour) App.selectStoreColour('#005EA5');
+        if (App.selectStoreColour) App.selectStoreColour('#005EA5');
     },
 
     selectStoreColour(hex) {

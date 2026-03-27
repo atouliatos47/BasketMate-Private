@@ -2,10 +2,6 @@
 // shopping.js — Shopping mode, toggle items
 // ===================================================
 
-// Safety guard
-if (typeof App === 'undefined') {
-    console.warn('shopping.js: App not ready yet');
-}
 
 Object.assign(App || window, {
 

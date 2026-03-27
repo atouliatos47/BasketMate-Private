@@ -2,12 +2,7 @@
 // settings.js — Settings panel
 // ===================================================
 
-// Safety guard
-if (typeof App === 'undefined') {
-    console.warn('settings.js: App not ready yet');
-}
-
-Object.assign(App || window, {
+Object.assign(App, {
 
     showSettings() {
         const panel = document.getElementById('settingsPanel');
@@ -155,7 +150,7 @@ Object.assign(App || window, {
         modal.innerHTML = `
             <div style="padding:4px 0 8px;max-height:70vh;overflow-y:auto;">
                 <h3 style="margin:0 0 16px;font-size:18px;color:#1a1a2e;">📖 How to Use BasketMate</h3>
-                <!-- Your full help content here - keep what you have -->
+                <!-- Your full help content here -->
                 <button class="modal-btn confirm" style="width:100%;margin-top:16px;" onclick="Utils.closeModal()">Got it! 👍</button>
             </div>`;
         overlay.classList.add('show');
