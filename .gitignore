@@ -10,14 +10,24 @@ yarn-error.log*
 .env.*.local
 .env.txt
 
-# Android / signing files
+# Android signing files
 *.keystore
+signing.keystore
 signing-key-info.txt
 
-# Logs and temporary files
+# Build outputs
+*.apk
+*.aab
+*.zip
+BasketMate-*.zip
+
+# Logs and OS files
 *.log
 .DS_Store
 Thumbs.db
 
 # IDE
 .idea/
+
+# Temporary / generated
+Photos/   # if you don't want to track photos
