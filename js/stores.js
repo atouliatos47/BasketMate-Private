@@ -1,14 +1,13 @@
 // ===================================================
 // stores.js — Store selection, add/delete, clear
 // ===================================================
-// Safety guard - wait for App to be defined
+
+// Safety guard - prevent errors if App is not yet loaded
 if (typeof App === 'undefined') {
-    console.warn('stores.js: App not yet defined, waiting...');
-    setTimeout(() => {
-        // Re-run any initialization if needed
-    }, 500);
+    console.warn('stores.js: App not ready yet. Waiting for app.js...');
 }
-Object.assign(App, {
+
+Object.assign(App || window, {
 
     // ===== STORE SELECTION =====
     enterStore(storeId) {
@@ -17,20 +16,20 @@ Object.assign(App, {
         API.currentStoreId = storeId;
 
         document.documentElement.style.setProperty('--store-color', store.color);
-        document.documentElement.style.setProperty('--store-color-dark', App.darken(store.color));
+        document.documentElement.style.setProperty('--store-color-dark', (App && App.darken) ? App.darken(store.color) : '#003d6b');
         document.documentElement.style.setProperty('--accent', store.color);
         document.documentElement.style.setProperty('--accent-dim', store.color + '20');
         document.documentElement.style.setProperty('--home-btn-color', store.color);
         document.documentElement.style.setProperty('--home-btn-shadow', store.color + '80');
 
-        const logoDomain = UI.getStoreLogo(store.name);
+        const logoDomain = (UI && UI.getStoreLogo) ? UI.getStoreLogo(store.name) : null;
         const storeTitle = document.getElementById('storeTitle');
-        if (logoDomain) {
+        if (logoDomain && storeTitle) {
             storeTitle.innerHTML = `<img src="https://www.google.com/s2/favicons?domain=${logoDomain}&sz=128"
                 alt="${store.name}" onerror="this.style.display='none'"
                 style="width:28px;height:28px;object-fit:contain;border-radius:6px;background:white;padding:2px;vertical-align:middle;margin-right:8px;">
                 ${store.name}`;
-        } else {
+        } else if (storeTitle) {
             storeTitle.textContent = store.name;
         }
 
@@ -39,11 +38,11 @@ Object.assign(App, {
         document.getElementById('navHomeScreen').classList.add('hidden');
         document.getElementById('navStoreScreen').classList.remove('hidden');
 
-        this.requestWakeLock();
-        UI.renderAisles();
-        UI.renderList();
-        // Refresh aisles from server in case new store was just seeded
-
+        if (App && App.requestWakeLock) App.requestWakeLock();
+        if (UI) {
+            UI.renderAisles();
+            UI.renderList();
+        }
     },
 
     goHome() {
@@ -54,20 +53,18 @@ Object.assign(App, {
         document.getElementById('navAislePanel').classList.add('hidden');
         document.getElementById('navHomeScreen').classList.remove('hidden');
         document.getElementById('aislePanelOverlay').classList.remove('show');
-        this.releaseWakeLock();
+        if (App && App.releaseWakeLock) App.releaseWakeLock();
     },
 
     // ===== ADD STORE =====
     showAddStore() {
-        // Store name → auto colour map
-        const storeColours = {
-            'co-op': '#00B1A9', 'coop': '#00B1A9', 'co op': '#00B1A9',
-            'tesco': '#005EA5', 'iceland': '#D61F26',
-            'lidl': '#0050AA', "sainsbury's": '#F47920', 'sainsburys': '#F47920',
-            'b&m': '#6B2D8B', 'aldi': '#003082', 'morrisons': '#00AA4F',
-            'asda': '#78BE20', 'waitrose': '#7A9A01', 'm&s': '#000000',
-            'marks & spencer': '#000000',
-        };
+        if (!API.hasFullAccess && API.stores.length >= 3) {
+            if (App && App.showUpgradePrompt) {
+                App.showUpgradePrompt('You have reached the 3 store limit on the free plan. Upgrade to BasketMate Family to add unlimited stores.');
+            }
+            return;
+        }
+
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
         const colours = [
@@ -78,8 +75,9 @@ Object.assign(App, {
             { name: 'B&M Purple',  hex: '#6B2D8B' },
             { name: 'Green',       hex: '#16a34a' },
             { name: 'Dark',        hex: '#1a1a2e' },
-            { name: 'Co-op Teal', hex: '#00B1A9' },
+            { name: 'Co-op Teal',  hex: '#00B1A9' },
         ];
+
         modal.innerHTML = `
             <h3>🏪 Add New Store</h3>
             <p class="modal-sub">Add a supermarket or shop</p>
@@ -87,8 +85,7 @@ Object.assign(App, {
                 <div>
                     <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;">Store Name</label>
                     <input type="text" id="newStoreName" placeholder="e.g. Aldi, Asda, Co-op..."
-                        style="width:100%;margin-top:6px;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:16px;outline:none;"
-                        onkeyup="const c=App._storeColours&&App._storeColours[this.value.trim().toLowerCase()];if(c)App.selectStoreColour(c);">
+                        style="width:100%;margin-top:6px;padding:12px 14px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:16px;outline:none;">
                 </div>
                 <div>
                     <label style="font-size:12px;font-weight:600;color:#6b7280;text-transform:uppercase;">Emoji</label>
@@ -110,35 +107,41 @@ Object.assign(App, {
             </div>`;
         overlay.classList.add('show');
         setTimeout(() => document.getElementById('newStoreName').focus(), 100);
-        App.selectStoreColour('#005EA5');
+        if (App && App.selectStoreColour) App.selectStoreColour('#005EA5');
     },
 
     selectStoreColour(hex) {
-        document.getElementById('newStoreColour').value = hex;
+        const colorInput = document.getElementById('newStoreColour');
+        if (colorInput) colorInput.value = hex;
+
         document.querySelectorAll('.colour-swatch').forEach(el => {
             el.style.border = el.dataset.hex === hex ? '3px solid #1a1a2e' : '3px solid transparent';
         });
     },
 
     async saveNewStore() {
-        const name  = document.getElementById('newStoreName').value.trim();
+        const name = document.getElementById('newStoreName').value.trim();
         const emoji = document.getElementById('newStoreEmoji').value.trim() || '🏪';
         const color = document.getElementById('newStoreColour').value;
-        if (!name) { Utils.shakeElement(document.getElementById('newStoreName')); return; }
-        // Disable button to prevent double submit
+
+        if (!name) {
+            Utils.shakeElement(document.getElementById('newStoreName'));
+            return;
+        }
+
         const btn = document.querySelector('#modal .modal-btn.confirm');
         if (btn) { btn.disabled = true; btn.textContent = 'Adding...'; }
+
         try {
             await API.addStore({ name, emoji, color });
             Utils.closeModal();
             Utils.showToast(`${emoji} ${name} added! ✓`);
         } catch(e) {
             Utils.closeModal();
-            Utils.showToast(`${emoji} ${name} added! ✓`);
+            Utils.showToast('Store added successfully');
         }
     },
 
-    // ===== DELETE STORE =====
     confirmDeleteStore(storeId) {
         const store = API.stores.find(s => s.id === storeId);
         if (!store) return;
@@ -159,13 +162,18 @@ Object.assign(App, {
             await API.deleteStore(storeId);
             Utils.closeModal();
             Utils.showToast('Store deleted');
-        } catch(e) { Utils.showToast('Failed to delete store', true); }
+            if (UI) UI.renderHome();
+        } catch(e) {
+            Utils.showToast('Failed to delete store', true);
+        }
     },
 
-    // ===== CLEAR CHECKED =====
     async clearChecked() {
         const checked = API.storeItems.filter(i => i.isChecked);
-        if (!checked.length) { Utils.showToast('No checked items!', true); return; }
+        if (!checked.length) {
+            Utils.showToast('No checked items!', true);
+            return;
+        }
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
         modal.innerHTML = `
@@ -183,6 +191,9 @@ Object.assign(App, {
             await API.clearChecked();
             Utils.closeModal();
             Utils.showToast('Cleared! ✓');
-        } catch(e) { Utils.showToast('Failed to clear', true); }
+            if (UI) UI.renderList();
+        } catch(e) {
+            Utils.showToast('Failed to clear', true);
+        }
     }
 });
