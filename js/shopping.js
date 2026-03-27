@@ -1,6 +1,13 @@
 // ===================================================
 // shopping.js — Shopping mode, toggle items
 // ===================================================
+// Safety guard - wait for App to be defined
+if (typeof App === 'undefined') {
+    console.warn('stores.js: App not yet defined, waiting...');
+    setTimeout(() => {
+        // Re-run any initialization if needed
+    }, 500);
+}
 Object.assign(App, {
 
     async setShoppingStatus(active) {
