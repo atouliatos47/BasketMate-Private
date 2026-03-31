@@ -9,7 +9,12 @@ const PORT         = process.env.PORT || 3000;
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY || '';
 const APP_DIR      = __dirname;
 
-webpush.setVapidDetails(process.env.VAPID_EMAIL, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+// CHANGE 1: Safe VAPID setup (won't crash if keys not set)
+if (process.env.VAPID_EMAIL && process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(process.env.VAPID_EMAIL, process.env.VAPID_PUBLIC_KEY, process.env.VAPID_PRIVATE_KEY);
+} else {
+    console.log('VAPID keys not set — push notifications disabled (local mode)');
+}
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
@@ -87,14 +92,22 @@ async function initDb() {
     const { rows } = await pool.query('SELECT COUNT(*) FROM stores');
     if (parseInt(rows[0].count) === 0) {
         const stores = [
-            { name: 'Tesco', color: '#005EA5', emoji: '🔵', sort_order: 1 }, { name: 'Iceland', color: '#D61F26', emoji: '🔴', sort_order: 2 },
-            { name: 'Lidl', color: '#0050AA', emoji: '🟡', sort_order: 3 }, { name: "Sainsbury's", color: '#F47920', emoji: '🟠', sort_order: 4 },
-            { name: 'B&M', color: '#6B2D8B', emoji: '🟣', sort_order: 5 }, { name: 'Morrisons', color: '#00AA4F', emoji: '🟢', sort_order: 6 },
-            { name: 'Marks & Spencer', color: '#000000', emoji: '⚫', sort_order: 7 }, { name: 'Aldi', color: '#003082', emoji: '🔷', sort_order: 8 },
+            { name: 'Tesco',           color: '#005EA5', emoji: '🔵', sort_order: 1  },
+            { name: 'Iceland',         color: '#D61F26', emoji: '🔴', sort_order: 2  },
+            { name: 'Lidl',            color: '#0050AA', emoji: '🟡', sort_order: 3  },
+            { name: "Sainsbury's",     color: '#F47920', emoji: '🟠', sort_order: 4  },
+            { name: 'B&M',             color: '#6B2D8B', emoji: '🟣', sort_order: 5  },
+            { name: 'Morrisons',       color: '#00AA4F', emoji: '🟢', sort_order: 6  },
+            { name: 'Marks & Spencer', color: '#000000', emoji: '⚫', sort_order: 7  },
+            { name: 'Aldi',            color: '#003082', emoji: '🔷', sort_order: 8  },
+            // CHANGE 3: Added Waitrose & Amazon Fresh to match public version
+            { name: 'Waitrose',        color: '#7A9A01', emoji: '🟩', sort_order: 9  },
+            { name: 'Amazon Fresh',    color: '#FF9900', emoji: '🟧', sort_order: 10 },
         ];
         for (const s of stores) await pool.query('INSERT INTO stores (name, color, emoji, sort_order) VALUES ($1,$2,$3,$4)', [s.name, s.color, s.emoji, s.sort_order]);
         console.log('Stores seeded!');
     }
+
     // ===== MIGRATE AISLES TO NEW SUPERMARKET-FRIENDLY STRUCTURE =====
     // Runs once — checks if migration already done via emoji aisle name
     const checkMigration = await pool.query("SELECT COUNT(*) FROM aisles WHERE name LIKE '🥖%'");
@@ -118,6 +131,32 @@ async function initDb() {
             }
         }
         console.log('Aisle migration complete — fresh start!');
+    }
+
+    // Add Waitrose and Amazon Fresh if not already in stores, with full aisles
+    const newStores = [
+        { name: 'Waitrose',     color: '#7A9A01', emoji: '🟩', sort_order: 9  },
+        { name: 'Amazon Fresh', color: '#FF9900', emoji: '🟧', sort_order: 10 },
+    ];
+    const households = await pool.query('SELECT id FROM households');
+    for (const storeData of newStores) {
+        const existing = await pool.query('SELECT id FROM stores WHERE name=$1', [storeData.name]);
+        if (existing.rows.length === 0) {
+            const result = await pool.query(
+                'INSERT INTO stores (name, color, emoji, sort_order) VALUES ($1,$2,$3,$4) RETURNING id',
+                [storeData.name, storeData.color, storeData.emoji, storeData.sort_order]
+            );
+            const storeId = result.rows[0].id;
+            for (const h of households.rows) {
+                for (const aisle of DEFAULT_AISLES) {
+                    await pool.query(
+                        'INSERT INTO aisles (household_id, store_id, name, sort_order, products) VALUES ($1,$2,$3,$4,$5)',
+                        [h.id, storeId, aisle.name, aisle.sort_order, JSON.stringify(aisle.products)]
+                    );
+                }
+            }
+            console.log(`${storeData.name} added with aisles!`);
+        }
     }
 
     console.log('Database ready');
@@ -159,16 +198,14 @@ const server = http.createServer(async (req, res) => {
         if (!householdId) { res.writeHead(400); return res.end(JSON.stringify({ error: 'householdId required' })); }
         res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive' });
         try {
-            const [sr, ar, ir, fr, hr] = await Promise.all([
+            const [sr, ar, ir, fr] = await Promise.all([
                 pool.query('SELECT * FROM stores ORDER BY sort_order ASC'),
                 pool.query('SELECT * FROM aisles WHERE household_id=$1 ORDER BY sort_order ASC', [householdId]),
                 pool.query('SELECT * FROM items WHERE household_id=$1 ORDER BY added_at ASC', [householdId]),
                 pool.query('SELECT * FROM favourites WHERE household_id=$1 ORDER BY name ASC', [householdId]),
-                pool.query('SELECT is_premium FROM households WHERE id=$1', [householdId])
             ]);
-            const isPremium = hr.rows[0]?.is_premium || false;
-            const trialStartedAt = hr.rows[0]?.trial_started_at || null;
-            res.write(`event: init\ndata: ${JSON.stringify({ stores: sr.rows.map(mapStore), aisles: ar.rows.map(mapAisle), items: ir.rows.map(mapItem), favourites: fr.rows, isPremium, trialStartedAt })}\n\n`);
+            // CHANGE 2: Always premium — no trial logic for private instance
+            res.write(`event: init\ndata: ${JSON.stringify({ stores: sr.rows.map(mapStore), aisles: ar.rows.map(mapAisle), items: ir.rows.map(mapItem), favourites: fr.rows, isPremium: true, trialStartedAt: null })}\n\n`);
         } catch (e) { console.error('SSE init error:', e); }
         if (!clients.has(householdId)) clients.set(householdId, new Set());
         clients.get(householdId).add(res);
@@ -176,34 +213,10 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
-    // ===== PREMIUM UPGRADE =====
+    // ===== PREMIUM UPGRADE (kept but not needed for private instance) =====
     if (pathname === '/purchase/verify' && method === 'POST') {
-        try {
-            const b = await getBody(req);
-            const { householdId, purchaseToken } = b;
-            if (!householdId || !purchaseToken) { res.writeHead(400); return res.end(JSON.stringify({ error: 'Missing fields' })); }
-
-            // TODO: Add Google Play server-side verification here once service account is set up
-            // For now trust the token (add proper verification before production launch)
-            // Example verification would use googleapis npm package:
-            // const { google } = require('googleapis');
-            // const androidpublisher = google.androidpublisher('v3');
-            // await androidpublisher.purchases.products.get({ packageName, productId, token: purchaseToken });
-
-            // Mark household as premium
-            await pool.query('UPDATE households SET is_premium=true, purchase_token=$1 WHERE id=$2', [purchaseToken, householdId]);
-
-            // Broadcast premium upgrade to all connected clients in this household
-            const msg = `event: premiumUpgraded\ndata: ${JSON.stringify({ householdId: parseInt(householdId) })}\n\n`;
-            clients.get(parseInt(householdId))?.forEach(r => r.write(msg));
-
-            res.writeHead(200);
-            return res.end(JSON.stringify({ success: true, isPremium: true }));
-        } catch(e) {
-            console.error('Purchase verify error:', e);
-            res.writeHead(500);
-            return res.end(JSON.stringify({ error: 'Upgrade failed' }));
-        }
+        res.writeHead(200);
+        return res.end(JSON.stringify({ success: true, isPremium: true }));
     }
 
     if (pathname === '/stores' && method === 'GET')  return storesRoute.getAll(req, res);
@@ -265,5 +278,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 initDb().then(() => {
-    server.listen(PORT, () => console.log(`BasketMate running on port ${PORT}`));
+    server.listen(PORT, () => console.log(`BasketMate Private running on port ${PORT}`));
 }).catch(err => { console.error('DB init failed:', err); process.exit(1); });

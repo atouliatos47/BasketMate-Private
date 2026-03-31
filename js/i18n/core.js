@@ -1,95 +1,66 @@
 // ===================================================
-// i18n/core.js — Translation engine for BasketMate
+// i18n/core.js — Translation engine & utilities
 // ===================================================
 
-// Global translations object - populated by lang-*.js files
+// TRANSLATIONS is populated by each lang-xx.js file
 const TRANSLATIONS = {};
 
-// Current language helper
-function getCurrentLanguage() {
-    return localStorage.getItem('bm_language') || 'en';
-}
-
-// Main translation function
+// Get translation by key
 function t(key, ...args) {
-    const lang = getCurrentLanguage();
-    const dict = TRANSLATIONS[lang] || TRANSLATIONS.en || {};
-
-    let value = dict[key];
-
-    // Fallback to English if key not found in current language
-    if (value === undefined) {
-        value = (TRANSLATIONS.en && TRANSLATIONS.en[key]) || key;
-    }
-
-    // Support for functions (e.g. pluralization in future)
-    if (typeof value === 'function') {
-        return value(...args);
-    }
-
+    const lang = localStorage.getItem('bm_language') || 'en';
+    const translations = TRANSLATIONS[lang] || TRANSLATIONS.en;
+    const value = translations[key] || TRANSLATIONS.en[key];
+    if (typeof value === 'function') return value(...args);
     return value || key;
 }
 
-// Apply translations to all elements with data-i18n attribute
-function applyTranslations() {
-    document.querySelectorAll('[data-i18n]').forEach(element => {
-        const key = element.getAttribute('data-i18n');
-        if (!key) return;
-
-        const translatedText = t(key);
-
-        // Different handling based on element type
-        if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
-            if (element.placeholder !== undefined) {
-                element.placeholder = translatedText;
-            } else {
-                element.value = translatedText;
-            }
-        } else if (element.tagName === 'BUTTON' || element.tagName === 'SPAN' ||
-            element.tagName === 'DIV' || element.tagName === 'P' ||
-            element.tagName === 'H1' || element.tagName === 'H2' ||
-            element.tagName === 'LABEL') {
-            element.textContent = translatedText;
-        } else {
-            element.textContent = translatedText;
-        }
-    });
-}
-
-// Change language and refresh UI
-function setLanguage(langCode) {
-    if (!LANGUAGES.some(lang => lang.code === langCode)) {
-        console.warn(`Language ${langCode} not supported`);
-        return false;
-    }
-
-    localStorage.setItem('bm_language', langCode);
-
-    // Re-apply translations immediately
-    applyTranslations();
-
-    // Optional: Trigger custom event so other modules can react
-    window.dispatchEvent(new CustomEvent('languageChanged', { detail: { lang: langCode } }));
-
-    console.log(`✅ Language changed to: ${langCode}`);
-    return true;
-}
-
-// Available languages list
+// Available languages
 const LANGUAGES = [
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'pl', name: 'Polski', flag: '🇵🇱' },
     { code: 'ro', name: 'Română', flag: '🇷🇴' },
     { code: 'el', name: 'Ελληνικά', flag: '🇬🇷' },
     { code: 'ur', name: 'اردو', flag: '🇵🇰' },
-    { code: 'pa', name: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },
-    { code: 'bn', name: 'বাংলা', flag: '🇧🇩' },
-    { code: 'zh', name: '中文', flag: '🇨🇳' }
+    { code: 'pa', name: 'ਪੰਜਾਬੀ', flag: '🇮🇳' },   // Punjabi (Indian)
+    { code: 'bn', name: 'বাংলা', flag: '🇧🇩' },   // Bengali
+    { code: 'zh', name: '中文', flag: '🇨🇳' },   // Simplified Chinese
+    { code: 'ar', name: 'العربية', flag: '🇸🇦' },   // Arabic
+    { code: 'gu', name: 'ગુજરાતી', flag: '🇮🇳' },   // Gujarati
+    { code: 'hi', name: 'हिन्दी', flag: '🇮🇳' },   // Hindi
+    { code: 'pt', name: 'Português', flag: '🇵🇹' },   // Portuguese
+    { code: 'ru', name: 'Русский', flag: '🇷🇺' },  // Russian
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'tl', name: 'Filipino', flag: '🇵🇭' },
+    { code: 'hu', name: 'Magyar', flag: '🇭🇺' }      // French
 ];
 
-// Aisle name translations (for dynamic aisle rendering)
+// Aisle name translations (plain text keys for reliable matching)
 const AISLE_NAMES = {
     en: {},
+    pl: {
+        'Bakery': 'Piekarnia',
+        'Fresh Food': 'Świeże produkty',
+        'Frozen Food': 'Mrożonki',
+        'Treats & Snacks': 'Słodycze i przekąski',
+        'Food Cupboard': 'Spiżarnia',
+        'Drinks': 'Napoje',
+        'Baby & Toddler': 'Niemowlęta i dzieci',
+        'Health & Beauty': 'Zdrowie i uroda',
+        'Pets': 'Zwierzęta',
+        'Household': 'Dom',
+    },
+    ro: {
+        'Bakery': 'Brutărie',
+        'Fresh Food': 'Produse proaspete',
+        'Frozen Food': 'Produse congelate',
+        'Treats & Snacks': 'Dulciuri și gustări',
+        'Food Cupboard': 'Cămară',
+        'Drinks': 'Băuturi',
+        'Baby & Toddler': 'Bebeluși și copii mici',
+        'Health & Beauty': 'Sănătate și frumusețe',
+        'Pets': 'Animale de companie',
+        'Household': 'Gospodărie',
+    },
     el: {
         'Bakery': 'Φούρνος',
         'Fresh Food': 'Φρέσκα τρόφιμα',
@@ -102,55 +73,161 @@ const AISLE_NAMES = {
         'Pets': 'Κατοικίδια',
         'Household': 'Οικιακά',
     },
-    // Add more languages here as needed...
-    pl: { /* your existing Polish translations */ },
-    ro: { /* your existing Romanian translations */ },
-    // ... etc
+    ur: {
+        'Bakery': 'بیکری',
+        'Fresh Food': 'تازہ خوراک',
+        'Frozen Food': 'منجمد خوراک',
+        'Treats & Snacks': 'مٹھائی اور اسنیکس',
+        'Food Cupboard': 'کھانے کا ذخیرہ',
+        'Drinks': 'مشروبات',
+        'Baby & Toddler': 'بچے',
+        'Health & Beauty': 'صحت اور خوبصورتی',
+        'Pets': 'پالتو جانور',
+        'Household': 'گھریلو',
+    },
+    // New languages - Aisle translations
+    pa: {
+        'Bakery': 'ਬੇਕਰੀ',
+        'Fresh Food': 'ਤਾਜ਼ਾ ਖਾਣਾ',
+        'Frozen Food': 'ਫ੍ਰੋਜ਼ਨ ਫੂਡ',
+        'Treats & Snacks': 'ਮਿਠਾਈ ਅਤੇ ਸਨੈਕਸ',
+        'Food Cupboard': 'ਖਾਣਾ ਰੱਖਣ ਵਾਲੀ ਅਲਮਾਰੀ',
+        'Drinks': 'ਪੀਣ ਵਾਲੀਆਂ ਚੀਜ਼ਾਂ',
+        'Baby & Toddler': 'ਬੱਚੇ ਅਤੇ ਟਾਡਲਰ',
+        'Health & Beauty': 'ਸਿਹਤ ਅਤੇ ਸੁੰਦਰਤਾ',
+        'Pets': 'ਪਾਲਤੂ ਜਾਨਵਰ',
+        'Household': 'ਘਰੇਲੂ',
+    },
+    bn: {
+        'Bakery': 'বেকারি',
+        'Fresh Food': 'তাজা খাবার',
+        'Frozen Food': 'ফ্রোজেন খাবার',
+        'Treats & Snacks': 'মিষ্টি ও স্ন্যাকস',
+        'Food Cupboard': 'খাবারের আলমারি',
+        'Drinks': 'পানীয়',
+        'Baby & Toddler': 'শিশু ও টডলার',
+        'Health & Beauty': 'স্বাস্থ্য ও সৌন্দর্য',
+        'Pets': 'পোষা প্রাণী',
+        'Household': 'ঘরোয়া',
+    },
+    zh: {
+        'Bakery': '面包房',
+        'Fresh Food': '新鲜食品',
+        'Frozen Food': '冷冻食品',
+        'Treats & Snacks': '零食和甜点',
+        'Food Cupboard': '食品储藏柜',
+        'Drinks': '饮料',
+        'Baby & Toddler': '婴儿和幼儿',
+        'Health & Beauty': '健康与美容',
+        'Pets': '宠物用品',
+        'Household': '家居用品',
+    },
+    ar: {
+        'Bakery': 'مخبز',
+        'Fresh Food': 'طعام طازج',
+        'Frozen Food': 'طعام مجمد',
+        'Treats & Snacks': 'حلويات ووجبات خفيفة',
+        'Food Cupboard': 'مخزن الطعام',
+        'Drinks': 'مشروبات',
+        'Baby & Toddler': 'الأطفال الرضع والصغار',
+        'Health & Beauty': 'الصحة والجمال',
+        'Pets': 'الحيوانات الأليفة',
+        'Household': 'المنزل',
+    },
+    gu: {
+        'Bakery': 'બેકરી',
+        'Fresh Food': 'તાજો ખોરાક',
+        'Frozen Food': 'ફ્રોઝ઼ન ખોરાક',
+        'Treats & Snacks': 'મિઠાઈ અને નાસ્તો',
+        'Food Cupboard': 'ખોરાક સંગ્રહ',
+        'Drinks': 'પીણાં',
+        'Baby & Toddler': 'શિશુ અને બાળક',
+        'Health & Beauty': 'સ્વાસ્થ્ય અને સૌંદર્ય',
+        'Pets': 'પાળતુ પ્રાણી',
+        'Household': 'ઘરવખરી',
+    },
+    hi: {
+        'Bakery': 'बेकरी',
+        'Fresh Food': 'ताजा खाना',
+        'Frozen Food': 'फ्रोज़न खाना',
+        'Treats & Snacks': 'मिठाई और नाश्ता',
+        'Food Cupboard': 'खाद्य भंडार',
+        'Drinks': 'पेय',
+        'Baby & Toddler': 'शिशु और बच्चे',
+        'Health & Beauty': 'स्वास्थ्य और सौंदर्य',
+        'Pets': 'पालतू जानवर',
+        'Household': 'घरेलू सामान',
+    },
+    pt: {
+        'Bakery': 'Padaria',
+        'Fresh Food': 'Produtos Frescos',
+        'Frozen Food': 'Congelados',
+        'Treats & Snacks': 'Guloseimas e Snacks',
+        'Food Cupboard': 'Despensa',
+        'Drinks': 'Bebidas',
+        'Baby & Toddler': 'Bebé e Criança',
+        'Health & Beauty': 'Saúde e Beleza',
+        'Pets': 'Animais de Estimação',
+        'Household': 'Casa',
+    },
+    ru: {
+        'Bakery': 'Выпечка',
+        'Fresh Food': 'Свежие продукты',
+        'Frozen Food': 'Замороженные продукты',
+        'Treats & Snacks': 'Сладости и снеки',
+        'Food Cupboard': 'Бакалея',
+        'Drinks': 'Напитки',
+        'Baby & Toddler': 'Для малышей',
+        'Health & Beauty': 'Здоровье и красота',
+        'Pets': 'Зоотовары',
+        'Household': 'Хозтовары',
+    },
+    fr: {
+        'Bakery': 'Boulangerie',
+        'Fresh Food': 'Produits frais',
+        'Frozen Food': 'Surgelés',
+        'Treats & Snacks': 'Friandises et snacks',
+        'Food Cupboard': 'Épicerie',
+        'Drinks': 'Boissons',
+        'Baby & Toddler': 'Bébé et enfant',
+        'Health & Beauty': 'Santé et beauté',
+        'Pets': 'Animaux de compagnie',
+        'Household': 'Maison',
+    },
+    tl: {
+        'Bakery': 'Panaderia',
+        'Fresh Food': 'Sariwang Pagkain',
+        'Frozen Food': 'Frozen na Pagkain',
+        'Treats & Snacks': 'Matatamis at Meryenda',
+        'Food Cupboard': 'Pagkain sa Pantry',
+        'Drinks': 'Mga Inumin',
+        'Baby & Toddler': 'Sanggol at Bata',
+        'Health & Beauty': 'Kalusugan at Kagandahan',
+        'Pets': 'Mga Alagang Hayop',
+        'Household': 'Pangbahay',
+    },
+    hu: {
+        'Bakery': 'Pékáru',
+        'Fresh Food': 'Friss élelmiszer',
+        'Frozen Food': 'Fagyasztott élelmiszer',
+        'Treats & Snacks': 'Édességek és snackek',
+        'Food Cupboard': 'Éléskamra',
+        'Drinks': 'Italok',
+        'Baby & Toddler': 'Baba és kisgyermek',
+        'Health & Beauty': 'Egészség és szépség',
+        'Pets': 'Kisállat',
+        'Household': 'Háztartás',
+    }
 };
 
 function translateAisleName(name) {
-    const lang = getCurrentLanguage();
+    const lang = localStorage.getItem('bm_language') || 'en';
     if (lang === 'en') return name;
-
     const map = AISLE_NAMES[lang] || {};
-    // Simple fuzzy matching for aisle names
-    const clean = str => str.toLowerCase().replace(/[^a-zα-ωά-ώ0-9\s]/gi, '').trim();
-
-    for (const [key, translated] of Object.entries(map)) {
-        if (clean(key) === clean(name)) {
-            return translated;
-        }
+    const getWords = s => s.replace(/[^a-zA-Z0-9\s&']/g, ' ').replace(/\s+/g, ' ').trim();
+    const nameWords = getWords(name);
+    for (const [key, val] of Object.entries(map)) {
+        if (getWords(key) === nameWords) return val;
     }
-    return name; // fallback
+    return name;
 }
-
-// ==================== AUTO INITIALIZATION ====================
-
-// Apply translations when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('i18n: Applying initial translations...');
-    applyTranslations();
-});
-
-// Re-apply translations when language changes from anywhere
-window.addEventListener('languageChanged', () => {
-    applyTranslations();
-});
-
-// Also listen to storage changes (in case language is changed in another tab)
-window.addEventListener('storage', (e) => {
-    if (e.key === 'bm_language') {
-        applyTranslations();
-    }
-});
-
-// Expose useful functions to global scope so other files can use them
-window.i18n = {
-    t: t,
-    setLanguage: setLanguage,
-    applyTranslations: applyTranslations,
-    translateAisleName: translateAisleName,
-    LANGUAGES: LANGUAGES
-};
-
-console.log('✅ i18n/core.js loaded successfully');
