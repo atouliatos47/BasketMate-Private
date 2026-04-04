@@ -1,10 +1,43 @@
 // ===================================================
-// app.js — Core: init, splash, household, push + Fixes
+// app.js — Core: init, splash, household, push
 // ===================================================
 
 const App = {
     wakeLock: null,
+    currentStoreColor: null,
 
+    // ==================== COLOR UTILITIES ====================
+    darken(hex, percent = 0.25) {
+        if (!hex || typeof hex !== 'string') return '#1a1a2e';
+        hex = hex.replace('#', '');
+        let r = parseInt(hex.substr(0, 2), 16);
+        let g = parseInt(hex.substr(2, 2), 16);
+        let b = parseInt(hex.substr(4, 2), 16);
+        r = Math.floor(r * (1 - percent));
+        g = Math.floor(g * (1 - percent));
+        b = Math.floor(b * (1 - percent));
+        return '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0');
+    },
+
+    lighten(hex, percent = 0.25) {
+        if (!hex || typeof hex !== 'string') return '#1a1a2e';
+        hex = hex.replace('#', '');
+        let r = parseInt(hex.substr(0, 2), 16);
+        let g = parseInt(hex.substr(2, 2), 16);
+        let b = parseInt(hex.substr(4, 2), 16);
+        r = Math.floor(r + (255 - r) * percent);
+        g = Math.floor(g + (255 - g) * percent);
+        b = Math.floor(b + (255 - b) * percent);
+        return '#' +
+            r.toString(16).padStart(2, '0') +
+            g.toString(16).padStart(2, '0') +
+            b.toString(16).padStart(2, '0');
+    },
+
+    // ==================== WAKE LOCK ====================
     async requestWakeLock() {
         try {
             if (screen.orientation && screen.orientation.lock) {
@@ -35,6 +68,7 @@ const App = {
         } catch (e) { console.log('Wake lock release error:', e); }
     },
 
+    // ==================== INIT ====================
     init() {
         console.log('BasketMate initializing...');
         this.setupEventListeners();
@@ -46,7 +80,10 @@ const App = {
             document.getElementById('homeScreen').classList.remove('hidden');
             setTimeout(() => {
                 const splash = document.getElementById('splashScreen');
-                if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
+                if (splash) {
+                    splash.classList.add('fade-out');
+                    setTimeout(() => { splash.style.display = 'none'; }, 600);
+                }
             }, 1800);
             this.applyTranslations();
             API.connectSSE();
@@ -59,16 +96,16 @@ const App = {
 
     applyTranslations() {
         const labels = {
-            'navLabelMyCode': 'myList',
-            'navLabelAddStore': 'addStore',
-            'navLabelMyList': 'myList',
-            'navLabelMyList2': 'myList',
-            'navLabelMyList3': 'myList',
-            'navLabelAddProduct': 'addProduct',
-            'aislesHeader': 'aisles',
-            'aislesSubHeader': 'tapAisleToAdd',
-            'tabListLabel': 'list',
-            'tabFavsLabel': 'favourites',
+            'navLabelMyCode':    'myList',
+            'navLabelAddStore':  'addStore',
+            'navLabelMyList':    'myList',
+            'navLabelMyList2':   'myList',
+            'navLabelMyList3':   'myList',
+            'navLabelAddProduct':'addProduct',
+            'aislesHeader':      'aisles',
+            'aislesSubHeader':   'tapAisleToAdd',
+            'tabListLabel':      'list',
+            'tabFavsLabel':      'favourites',
         };
         Object.entries(labels).forEach(([id, key]) => {
             const el = document.getElementById(id);
@@ -84,65 +121,24 @@ const App = {
         if (settingsTitle) settingsTitle.textContent = t('settings');
     },
 
-    showLanguageFirst() {
-        if (localStorage.getItem('bm_language')) {
-            this.showHouseholdSetup();
-            return;
-        }
-        const splash = document.getElementById('splashScreen');
-        if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
-        const overlay = document.getElementById('modalOverlay');
-        const modal = document.getElementById('modal');
-        const langOptions = LANGUAGES.map(l => `
-            <button onclick="App.pickLanguage('${l.code}')"
-                style="display:flex;align-items:center;gap:12px;padding:14px 16px;border:2px solid #e5e7eb;border-radius:12px;background:white;font-size:16px;cursor:pointer;text-align:left;width:100%;margin-bottom:8px;">
-                <span style="font-size:28px;">${l.flag}</span>
-                <span style="font-weight:600;color:#1a1a2e;">${l.name}</span>
-            </button>
-        `).join('');
-        modal.innerHTML = `
-            <div style="text-align:center;padding:8px 0 16px;">
-                <div style="font-size:48px;margin-bottom:12px;">🌍</div>
-                <h2 style="margin:0 0 6px;font-size:22px;color:#1a1a2e;">Choose Your Language</h2>
-                <p style="color:#6b7280;font-size:14px;margin:0 0 20px;">Select your preferred language to continue.</p>
-                <div style="text-align:left;">${langOptions}</div>
-            </div>`;
-        overlay.classList.add('show');
-        overlay.onclick = null;
-    },
-
-    pickLanguage(code) {
-        localStorage.setItem('bm_language', code);
-        window.dispatchEvent(new Event('languageChanged'));
-        document.body.dir = code === 'ur' ? 'rtl' : 'ltr';
-        this.applyTranslations();
-        const overlay = document.getElementById('modalOverlay');
-        overlay.classList.remove('show');
-        if (API.householdId) {
-            API.connectSSE();
-            API.startKeepAlive();
-            setTimeout(() => this.setupPushNotifications(), 3000);
-        } else {
-            setTimeout(() => this.showHouseholdSetup(), 200);
-        }
-    },
-
     showSplash() {
         const splash = document.getElementById('splashScreen');
         const storesContainer = document.getElementById('splashStores');
         if (!splash) return;
+
         const stores = [
-            { name: 'Tesco', color: '#005EA5', domain: 'tesco.com' },
-            { name: 'Iceland', color: '#D61F26', domain: 'iceland.co.uk' },
-            { name: 'Lidl', color: '#0050AA', domain: 'lidl.co.uk' },
-            { name: "Sainsbury's", color: '#F47920', domain: 'sainsburys.co.uk' },
-            { name: 'B&M', color: '#6B2D8B', domain: 'bmstores.co.uk' },
-            { name: 'Asda', color: '#78BE20', domain: 'asda.com' },
-            { name: 'Morrisons', color: '#00AA4F', domain: 'morrisons.com' },
-            { name: 'M&S', color: '#000000', domain: 'marksandspencer.com' },
-            { name: 'Aldi', color: '#003082', domain: 'aldi.co.uk' },
-            { name: 'Co-op', color: '#00B1A9', domain: 'coop.co.uk' },
+            { name: 'Tesco',        color: '#005EA5', domain: 'tesco.com' },
+            { name: 'Iceland',      color: '#D61F26', domain: 'iceland.co.uk' },
+            { name: 'Lidl',         color: '#0050AA', domain: 'lidl.co.uk' },
+            { name: "Sainsbury's",  color: '#F47920', domain: 'sainsburys.co.uk' },
+            { name: 'B&M',          color: '#6B2D8B', domain: 'bmstores.co.uk' },
+            { name: 'Asda',         color: '#78BE20', domain: 'asda.com' },
+            { name: 'Morrisons',    color: '#00AA4F', domain: 'morrisons.com' },
+            { name: 'M&S',          color: '#000000', domain: 'marksandspencer.com' },
+            { name: 'Aldi',         color: '#003082', domain: 'aldi.co.uk' },
+            { name: 'Co-op',        color: '#00B1A9', domain: 'coop.co.uk' },
         ];
+
         storesContainer.innerHTML = stores.map((store, i) => {
             const initials = store.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
             return `<div class="splash-store" style="animation-delay:${0.4 + i * 0.12}s">
@@ -230,7 +226,11 @@ const App = {
     saveMemberName() {
         const input = document.getElementById('memberNameInput');
         const name = input.value.trim();
-        if (!name) { document.getElementById('nameError').style.display = 'block'; input.style.borderColor = '#dc2626'; return; }
+        if (!name) {
+            document.getElementById('nameError').style.display = 'block';
+            input.style.borderColor = '#dc2626';
+            return;
+        }
         localStorage.setItem('bm_member_name', name);
         API.memberName = name;
         this.showWelcomeSplash(name);
@@ -258,7 +258,12 @@ const App = {
         const input = document.getElementById('joinCodeInput');
         const error = document.getElementById('householdError');
         const code = input.value.trim().toUpperCase();
-        if (code.length < 6) { input.style.borderColor = '#dc2626'; error.textContent = 'Please enter a 6-character code.'; error.style.display = 'block'; return; }
+        if (code.length < 6) {
+            input.style.borderColor = '#dc2626';
+            error.textContent = 'Please enter a 6-character code.';
+            error.style.display = 'block';
+            return;
+        }
         try {
             input.disabled = true;
             error.style.display = 'none';
@@ -292,10 +297,19 @@ const App = {
             const reg = await navigator.serviceWorker.ready;
             const r = await fetch('/push/vapid-key');
             const { publicKey } = await r.json();
-            const subscription = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: this.urlBase64ToUint8Array(publicKey) });
-            await fetch('/push/subscribe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subscription, householdId: API.householdId }) });
+            const subscription = await reg.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: this.urlBase64ToUint8Array(publicKey)
+            });
+            await fetch('/push/subscribe', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ subscription, householdId: API.householdId })
+            });
             console.log('Push notifications enabled!');
-        } catch (e) { console.log('Push setup failed:', e); }
+        } catch (e) {
+            console.log('Push setup failed:', e);
+        }
     },
 
     urlBase64ToUint8Array(base64String) {
@@ -306,23 +320,21 @@ const App = {
     },
 
     setupEventListeners() {
-        document.getElementById('modalOverlay').addEventListener('click', (e) => {
-            if (e.target === document.getElementById('modalOverlay')) Utils.closeModal();
-        });
-
-        // Bottom navigation safety
-        setTimeout(() => {
-            const myListBtn = document.querySelector('#navHomeScreen button:first-child');
-            if (myListBtn) {
-                myListBtn.onclick = () => App.showMyList();
-            }
-        }, 1000);
+        // Modal overlay click-to-close
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) Utils.closeModal();
+            });
+        }
+        // NOTE: No setTimeout overrides here — button onclicks are set in index.html
     },
 
+    // ==================== NAVIGATION ====================
     smartHome() {
         const aislePanel = document.getElementById('aislePanelOverlay');
         if (aislePanel && aislePanel.classList.contains('show')) {
-            UI.closeAislePanel();
+            if (typeof UI !== 'undefined' && UI.closeAislePanel) UI.closeAislePanel();
             return;
         }
         const shopMode = document.getElementById('shoppingModeOverlay');
@@ -333,6 +345,52 @@ const App = {
         this.goHome();
     },
 
+    goHome() {
+        API.currentStoreId = null;
+
+        // Hide all overlays and secondary screens
+        ['storeScreen', 'shoppingModeOverlay'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+
+        // Aisle panel uses .show — never use .hidden on it
+        const aislePanel = document.getElementById('aislePanelOverlay');
+        if (aislePanel) aislePanel.classList.remove('show');
+
+        // Show home screen
+        const homeScreen = document.getElementById('homeScreen');
+        if (homeScreen) homeScreen.classList.remove('hidden');
+
+        // Reset ALL nav sections — only show home nav
+        ['navStoreScreen', 'navAislePanel', 'navShoppingMode', 'navMyList'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden'); // safe — navMyList may not exist
+        });
+        document.getElementById('navHomeScreen').classList.remove('hidden');
+
+        this.releaseWakeLock();
+        window.scrollTo(0, 0);
+    },
+
+    closeShoppingMode() {
+        const overlay = document.getElementById('shoppingModeOverlay');
+        if (overlay) overlay.classList.add('hidden');
+        this.goHome();
+    },
+
+    // ==================== SETTINGS ====================
+    showSettings() {
+        document.getElementById('settingsOverlay').classList.add('open');
+        document.getElementById('settingsPanel').classList.add('open');
+    },
+
+    closeSettings() {
+        document.getElementById('settingsOverlay').classList.remove('open');
+        document.getElementById('settingsPanel').classList.remove('open');
+    },
+
+    // ==================== ALERTS ====================
     showItemAlert(addedBy, itemName, storeName) {
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
@@ -359,11 +417,11 @@ const App = {
                 <div style="font-size:52px;margin-bottom:12px;">👨‍👩‍👧‍👦</div>
                 <h2 style="margin:0 0 6px;font-size:22px;color:#1a1a2e;">BasketMate Family</h2>
                 ${trialExpired
-                ? `<div style="background:#fee2e2;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#dc2626;font-weight:600;">⏰ Your 15-day free trial has ended</div>`
-                : daysLeft <= 5
+                    ? `<div style="background:#fee2e2;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#dc2626;font-weight:600;">⏰ Your 15-day free trial has ended</div>`
+                    : daysLeft <= 5
                     ? `<div style="background:#fef3c7;border-radius:10px;padding:10px;margin-bottom:14px;font-size:13px;color:#d97706;font-weight:600;">⏳ ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left in your trial</div>`
                     : ''
-            }
+                }
                 ${reason ? `<p style="color:#6b7280;font-size:13px;margin:0 0 16px;">${reason}</p>` : ''}
                 <div style="background:#f0f9ff;border-radius:14px;padding:16px;margin-bottom:20px;text-align:left;">
                     <div style="font-weight:700;color:#1a1a2e;margin-bottom:10px;">Everything in Family:</div>
@@ -412,8 +470,10 @@ const App = {
                 await API.verifyPurchase(purchaseToken);
                 Utils.showToast('🎉 Welcome to BasketMate Family!');
                 API.isPremium = true;
-                UI.renderHome();
-                UI.renderTrialBanner();
+                if (typeof UI !== 'undefined') {
+                    UI.renderHome();
+                    UI.renderTrialBanner();
+                }
             } catch (e) {
                 console.error('Purchase error:', e);
                 if (e.name !== 'AbortError') Utils.showToast('Purchase failed. Please try again.', true);
@@ -425,8 +485,10 @@ const App = {
                 try {
                     await API.verifyPurchase('TEST_TOKEN_' + Date.now());
                     API.isPremium = true;
-                    UI.renderHome();
-                    UI.renderTrialBanner();
+                    if (typeof UI !== 'undefined') {
+                        UI.renderHome();
+                        UI.renderTrialBanner();
+                    }
                     Utils.showToast('🎉 Upgraded to BasketMate Family!');
                 } catch (e) {
                     Utils.showToast('Purchase failed', true);
@@ -445,117 +507,10 @@ const App = {
                 </div>`;
             overlay.classList.add('show');
         }
-    },
-
-    // ==================== SAFE FILTER HELPER ====================
-    safeGetStoreItems(storeId) {
-        if (!API.items || typeof API.items !== 'object' || !API.items[storeId]) return [];
-        const items = API.items[storeId];
-        return Array.isArray(items) ? items : [];
-    },
-
-    // ==================== FIXED SHOW MY LIST ====================
-    showMyList() {
-        const overlay = document.getElementById('myListOverlay');
-        const content = document.getElementById('myListContent');
-        const stats = document.getElementById('myListStats');
-
-        if (!overlay || !content) return;
-
-        const stores = API.stores || [];
-        let totalItems = 0;
-        let totalChecked = 0;
-        let html = '';
-
-        stores.forEach(store => {
-            const items = this.safeGetStoreItems(store.id).filter(i => !i.deleted);
-            if (items.length === 0) return;
-
-            const checkedCount = items.filter(i => i.checked).length;
-            totalItems += items.length;
-            totalChecked += checkedCount;
-
-            html += `
-                <div class="my-list-store-section">
-                    <div class="my-list-store-header">
-                        <img src="https://www.google.com/s2/favicons?domain=${store.domain || ''}&sz=64"
-                             onerror="this.style.display='none'"
-                             style="width:20px;height:20px;object-fit:contain;border-radius:4px;flex-shrink:0;">
-                        <span style="flex:1;font-weight:700;">${Utils.escapeHtml(store.name)}</span>
-                        <span class="my-list-store-count">${items.length - checkedCount} remaining</span>
-                    </div>
-                    ${items.map(item => `
-                        <div class="my-list-item${item.checked ? ' checked' : ''}">
-                            <div class="my-list-item-check${item.checked ? ' ticked' : ''}">
-                                ${item.checked ? '✓' : ''}
-                            </div>
-                            <span class="my-list-item-name">${Utils.escapeHtml(item.name)}</span>
-                        </div>
-                    `).join('')}
-                </div>`;
-        });
-
-        if (!html) {
-            html = `<div style="text-align:center;padding:60px 20px;color:#9ca3af;">
-                <div style="font-size:48px;margin-bottom:12px;">🛒</div>
-                <div style="font-size:16px;font-weight:600;">Your list is empty</div>
-                <div style="font-size:13px;margin-top:8px;">Add items from your stores to get started</div>
-            </div>`;
-        }
-
-        content.innerHTML = html;
-        const remaining = totalItems - totalChecked;
-        if (stats) stats.textContent = remaining > 0 ? `${remaining} item${remaining !== 1 ? 's' : ''} remaining` : '✓ All done!';
-
-        overlay.classList.remove('hidden');
-        document.getElementById('navHomeScreen').classList.add('hidden');
-        document.getElementById('navMyList').classList.remove('hidden');
-    },
-
-    // ==================== IMPROVED NAVIGATION FUNCTIONS ====================
-    closeMyList() {
-        this.goHome();
-    },
-
-    goHome() {
-        // Hide all overlays and secondary screens
-        document.querySelectorAll('#myListOverlay, #shoppingModeOverlay, #aislePanelOverlay, #storeScreen')
-            .forEach(el => {
-                if (el) el.classList.add('hidden');
-            });
-
-        // Show home screen
-        const homeScreen = document.getElementById('homeScreen');
-        if (homeScreen) homeScreen.classList.remove('hidden');
-
-        // Reset bottom navigation
-        document.getElementById('navHomeScreen').classList.remove('hidden');
-        document.getElementById('navMyList').classList.add('hidden');
-        document.getElementById('navStoreScreen').classList.add('hidden');
-        document.getElementById('navShoppingMode').classList.add('hidden');
-        document.getElementById('navAislePanel').classList.add('hidden');
-
-        window.scrollTo(0, 0);
-    },
-
-    // ==================== OTHER FUNCTIONS (keep your original ones) ====================
-    closeSettings() {
-        document.getElementById('settingsOverlay').classList.remove('show');
-        document.getElementById('settingsPanel').classList.remove('show');
-    },
-
-    showSettings() {
-        document.getElementById('settingsOverlay').classList.add('show');
-        document.getElementById('settingsPanel').classList.add('show');
-    },
-
-    showAddStore() {
-        // Add your store adding logic here or call existing function
-        console.log("Add Store clicked");
-        // Example: Utils.showToast("Add store feature coming soon");
     }
 };
 
+// ==================== START THE APP ====================
 document.addEventListener('DOMContentLoaded', () => {
     App.init();
     App.requestWakeLock();

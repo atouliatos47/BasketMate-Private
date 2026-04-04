@@ -39,13 +39,27 @@ Object.assign(App, {
 
     goHome() {
         API.currentStoreId = null;
-        document.getElementById('storeScreen').classList.add('hidden');
+
+        // Hide all overlays
+        ['storeScreen', 'myListOverlay', 'shoppingModeOverlay'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
+        const aislePanel = document.getElementById('aislePanelOverlay');
+        if (aislePanel) aislePanel.classList.remove('show');
+
+        // Show home screen
         document.getElementById('homeScreen').classList.remove('hidden');
-        document.getElementById('navStoreScreen').classList.add('hidden');
-        document.getElementById('navAislePanel').classList.add('hidden');
+
+        // Reset ALL nav sections
+        ['navStoreScreen', 'navAislePanel', 'navMyList', 'navShoppingMode'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.classList.add('hidden');
+        });
         document.getElementById('navHomeScreen').classList.remove('hidden');
-        document.getElementById('aislePanelOverlay').classList.remove('show');
+
         this.releaseWakeLock();
+        window.scrollTo(0, 0);
     },
 
     showAddStore() {
@@ -61,13 +75,13 @@ Object.assign(App, {
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
         const colours = [
-            { name: 'Tesco Blue',  hex: '#005EA5' },
+            { name: 'Tesco Blue', hex: '#005EA5' },
             { name: 'Iceland Red', hex: '#D61F26' },
-            { name: 'Lidl Blue',   hex: '#0050AA' },
-            { name: 'Sainsburys',  hex: '#F47920' },
-            { name: 'B&M Purple',  hex: '#6B2D8B' },
-            { name: 'Green',       hex: '#16a34a' },
-            { name: 'Dark',        hex: '#1a1a2e' },
+            { name: 'Lidl Blue', hex: '#0050AA' },
+            { name: 'Sainsburys', hex: '#F47920' },
+            { name: 'B&M Purple', hex: '#6B2D8B' },
+            { name: 'Green', hex: '#16a34a' },
+            { name: 'Dark', hex: '#1a1a2e' },
             { name: 'Co-op Teal', hex: '#00B1A9' },
         ];
         modal.innerHTML = `
@@ -111,7 +125,7 @@ Object.assign(App, {
     },
 
     async saveNewStore() {
-        const name  = document.getElementById('newStoreName').value.trim();
+        const name = document.getElementById('newStoreName').value.trim();
         const emoji = document.getElementById('newStoreEmoji').value.trim() || '🏪';
         const color = document.getElementById('newStoreColour').value;
         if (!name) { Utils.shakeElement(document.getElementById('newStoreName')); return; }
@@ -121,7 +135,7 @@ Object.assign(App, {
             await API.addStore({ name, emoji, color });
             Utils.closeModal();
             Utils.showToast(t('storeAdded', emoji, name));
-        } catch(e) {
+        } catch (e) {
             Utils.closeModal();
             Utils.showToast(t('storeAdded', emoji, name));
         }
@@ -147,7 +161,7 @@ Object.assign(App, {
             await API.deleteStore(storeId);
             Utils.closeModal();
             Utils.showToast(t('storeDeleted'));
-        } catch(e) { Utils.showToast(t('failedToRemove'), true); }
+        } catch (e) { Utils.showToast(t('failedToRemove'), true); }
     },
 
     async clearChecked() {
@@ -170,6 +184,6 @@ Object.assign(App, {
             await API.clearChecked();
             Utils.closeModal();
             Utils.showToast('Cleared! ✓');
-        } catch(e) { Utils.showToast('Failed to clear', true); }
+        } catch (e) { Utils.showToast('Failed to clear', true); }
     }
 });
