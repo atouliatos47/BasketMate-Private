@@ -213,6 +213,7 @@
                 <span class="settings-item-arrow">›</span>
             </div>
 
+            <!-- Other settings items remain unchanged -->
             <div class="settings-item" onclick="App.showChangeName()">
                 <div class="settings-item-icon">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -378,22 +379,21 @@
 
     <!-- ===== BOTTOM NAV ===== -->
     <div class="bottom-nav" id="bottomNav">
-
-        <!-- HOME SCREEN NAV -->
+        <!-- HOME SCREEN NAV - FIXED MY LIST BUTTON -->
         <div class="nav-home-screen" id="navHomeScreen">
-            <button onclick="App.showMyList()">
+            <button class="nav-btn-code" onclick="App.showMyList()">
                 <div class="nav-icon-wrap">🛒</div>
-                <span class="nav-label">MY LIST</span>
+                <span class="nav-label" id="navLabelMyCode">MY LIST</span>
             </button>
-            <button onclick="App.smartHome()">
+            <button class="nav-btn-home" onclick="App.smartHome()">
                 <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
                     <path d="M3 9.5L12 3L21 9.5V20C21 20.55 20.55 21 20 21H15V15H9V21H4C3.45 21 3 20.55 3 20V9.5Z"
                         fill="white" />
                 </svg>
             </button>
-            <button onclick="App.showAddStore()">
+            <button class="nav-btn-add" onclick="App.showAddStore()">
                 <div class="nav-icon-wrap">➕</div>
-                <span class="nav-label">Add Store</span>
+                <span class="nav-label" id="navLabelAddStore">Add Store</span>
             </button>
         </div>
 
@@ -448,7 +448,7 @@
 
         <!-- MY LIST NAV -->
         <div class="nav-store-screen hidden" id="navMyList">
-            <button class="nav-btn-back" onclick="App.goHome()">
+            <button class="nav-btn-back" onclick="App.closeMyList()">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
@@ -472,13 +472,13 @@
     <!-- ===== MY LIST OVERLAY (All stores combined) ===== -->
     <div class="my-list-overlay hidden" id="myListOverlay">
         <div class="my-list-header">
-            <button class="my-list-back" onclick="App.goHome()">
+            <button class="my-list-back" onclick="App.closeMyList()">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M19 12H5M12 5l-7 7 7 7" />
                 </svg>
             </button>
-            <span class="my-list-title">My List</span>
+            <span class="my-list-title">📋 My List</span>
             <span class="my-list-stats" id="myListStats"></span>
         </div>
         <div class="my-list-content" id="myListContent">
