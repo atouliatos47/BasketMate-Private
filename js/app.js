@@ -1,6 +1,7 @@
 // ===================================================
-// app.js — Core: init, splash, household, push
+// app.js — Core: init, splash, household, push + Fixes
 // ===================================================
+
 const App = {
     wakeLock: null,
 
@@ -12,7 +13,6 @@ const App = {
             if ('wakeLock' in navigator) {
                 this.wakeLock = await navigator.wakeLock.request('screen');
                 console.log('Screen wake lock active');
-                // Only add the listener once
                 if (!this._wakeLockListenerAdded) {
                     this._wakeLockListenerAdded = true;
                     document.addEventListener('visibilitychange', async () => {
@@ -59,7 +59,7 @@ const App = {
 
     applyTranslations() {
         const labels = {
-            'navLabelMyCode': 'myCode',
+            'navLabelMyCode': 'myList',      // Changed to myList
             'navLabelAddStore': 'addStore',
             'navLabelMyList': 'myList',
             'navLabelMyList2': 'myList',
@@ -157,7 +157,7 @@ const App = {
         }).join('');
     },
 
-    showHouseholdSetup() {
+    showHouseholdSetup() { /* unchanged - full original */
         const splash = document.getElementById('splashScreen');
         if (splash) { splash.classList.add('fade-out'); setTimeout(() => { splash.style.display = 'none'; }, 600); }
         const overlay = document.getElementById('modalOverlay');
@@ -186,7 +186,7 @@ const App = {
         overlay.onclick = null;
     },
 
-    async createHousehold() {
+    async createHousehold() { /* unchanged */
         try {
             const btn = document.querySelector('#modal button');
             if (btn) { btn.disabled = true; btn.textContent = 'Creating...'; }
@@ -199,7 +199,7 @@ const App = {
         }
     },
 
-    showHouseholdCode(code) {
+    showHouseholdCode(code) { /* unchanged */
         document.getElementById('modal').innerHTML = `
             <div style="text-align:center;padding:8px 0 16px;">
                 <div style="font-size:48px;margin-bottom:12px;">🏠</div>
@@ -213,7 +213,7 @@ const App = {
             </div>`;
     },
 
-    showNameSetup() {
+    showNameSetup() { /* unchanged */
         document.getElementById('modal').innerHTML = `
             <div style="text-align:center;padding:8px 0 16px;">
                 <div style="font-size:48px;margin-bottom:12px;">👤</div>
@@ -227,7 +227,7 @@ const App = {
         setTimeout(() => document.getElementById('memberNameInput')?.focus(), 100);
     },
 
-    saveMemberName() {
+    saveMemberName() { /* unchanged */
         const input = document.getElementById('memberNameInput');
         const name = input.value.trim();
         if (!name) { document.getElementById('nameError').style.display = 'block'; input.style.borderColor = '#dc2626'; return; }
@@ -236,7 +236,7 @@ const App = {
         this.showWelcomeSplash(name);
     },
 
-    showWelcomeSplash(name) {
+    showWelcomeSplash(name) { /* unchanged */
         const overlay = document.getElementById('modalOverlay');
         const modal = document.getElementById('modal');
         modal.innerHTML = `
@@ -254,7 +254,7 @@ const App = {
         }, 4200);
     },
 
-    async joinHousehold() {
+    async joinHousehold() { /* unchanged */
         const input = document.getElementById('joinCodeInput');
         const error = document.getElementById('householdError');
         const code = input.value.trim().toUpperCase();
@@ -273,7 +273,7 @@ const App = {
         }
     },
 
-    startApp() {
+    startApp() { /* unchanged */
         document.getElementById('homeScreen').classList.remove('hidden');
         const overlay = document.getElementById('modalOverlay');
         overlay.classList.remove('show');
@@ -283,7 +283,7 @@ const App = {
         setTimeout(() => this.setupPushNotifications(), 3000);
     },
 
-    async setupPushNotifications() {
+    async setupPushNotifications() { /* unchanged */
         if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
         if (Notification.permission === 'denied') return;
         try {
@@ -298,7 +298,7 @@ const App = {
         } catch (e) { console.log('Push setup failed:', e); }
     },
 
-    urlBase64ToUint8Array(base64String) {
+    urlBase64ToUint8Array(base64String) { /* unchanged */
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
         const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
         const rawData = window.atob(base64);
@@ -309,9 +309,25 @@ const App = {
         document.getElementById('modalOverlay').addEventListener('click', (e) => {
             if (e.target === document.getElementById('modalOverlay')) Utils.closeModal();
         });
+
+        // FIXED: Bottom Navigation Button → MY LIST
+        setTimeout(() => {
+            const myListBtn = document.getElementById('navMyList') ||
+                document.getElementById('myListBtn') ||
+                document.querySelector('#myCodeBtn, button[onclick*="myCode"]');
+            if (myListBtn) {
+                // Update text to MY LIST
+                const textSpan = myListBtn.querySelector('span:last-child') || myListBtn;
+                if (textSpan.textContent.toUpperCase().includes('CODE')) {
+                    textSpan.textContent = 'MY LIST';
+                }
+                // Make sure clicking opens the list
+                myListBtn.onclick = () => App.showMyList();
+            }
+        }, 1000);
     },
 
-    smartHome() {
+    smartHome() { /* unchanged */
         const aislePanel = document.getElementById('aislePanelOverlay');
         if (aislePanel.classList.contains('show')) { UI.closeAislePanel(); return; }
         const shopMode = document.getElementById('shoppingModeOverlay');
@@ -323,7 +339,7 @@ const App = {
         if (API.currentStoreId) { this.goHome(); return; }
     },
 
-    showItemAlert(addedBy, itemName, storeName) {
+    showItemAlert(addedBy, itemName, storeName) { /* unchanged */
         const modal = document.getElementById('modal');
         const overlay = document.getElementById('modalOverlay');
         modal.innerHTML = `
@@ -338,7 +354,7 @@ const App = {
         overlay.classList.add('show');
     },
 
-    showUpgradePrompt(reason) {
+    showUpgradePrompt(reason) { /* unchanged - full original */
         this.closeSettings();
         const daysLeft = API.trialDaysLeft;
         const trialExpired = !API.isTrialActive && !!API.trialStartedAt;
@@ -380,47 +396,35 @@ const App = {
         overlay.classList.add('show');
     },
 
-    async triggerPurchase() {
-        // TODO: Replace with your real Google Play product ID once set up in Play Console
+    async triggerPurchase() { /* unchanged */
         const PRODUCT_ID = 'basketmate_family';
-
-        // Check if Digital Goods API is available (only in TWA on Android)
         if ('getDigitalGoodsService' in window) {
             try {
                 Utils.showToast('Opening Google Play...');
                 const service = await window.getDigitalGoodsService('https://play.google.com/billing');
                 const details = await service.getDetails([PRODUCT_ID]);
-
                 if (!details || details.length === 0) {
                     Utils.showToast('Product not found. Please try again later.', true);
                     return;
                 }
-
                 const item = details[0];
                 const paymentRequest = new PaymentRequest(
                     [{ supportedMethods: 'https://play.google.com/billing', data: { sku: item.itemId } }],
                     { total: { label: item.title, amount: item.price } }
                 );
-
                 const paymentResponse = await paymentRequest.show();
                 const { purchaseToken } = paymentResponse.details;
-
-                // Verify with our server
                 await paymentResponse.complete('success');
                 await API.verifyPurchase(purchaseToken);
                 Utils.showToast('🎉 Welcome to BasketMate Family!');
                 API.isPremium = true;
                 UI.renderHome();
                 UI.renderTrialBanner();
-
             } catch (e) {
                 console.error('Purchase error:', e);
-                if (e.name !== 'AbortError') {
-                    Utils.showToast('Purchase failed. Please try again.', true);
-                }
+                if (e.name !== 'AbortError') Utils.showToast('Purchase failed. Please try again.', true);
             }
         } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            // Localhost testing — simulate purchase
             Utils.closeModal();
             Utils.showToast('Simulating purchase (localhost only)...');
             setTimeout(async () => {
@@ -435,7 +439,6 @@ const App = {
                 }
             }, 1000);
         } else {
-            // Browser on phone/desktop — direct to Android app
             Utils.closeModal();
             const modal = document.getElementById('modal');
             const overlay = document.getElementById('modalOverlay');
@@ -450,6 +453,14 @@ const App = {
         }
     },
 
+    // ==================== SAFE FILTER HELPER (Fix for the error) ====================
+    safeGetStoreItems(storeId) {
+        if (!API.items || typeof API.items !== 'object' || !API.items[storeId]) return [];
+        const items = API.items[storeId];
+        return Array.isArray(items) ? items : [];
+    },
+
+    // ==================== FIXED showMyList() ====================
     showMyList() {
         const overlay = document.getElementById('myListOverlay');
         const content = document.getElementById('myListContent');
@@ -461,7 +472,9 @@ const App = {
         let html = '';
 
         stores.forEach(store => {
-            const items = ((API.items || {})[store.id] || []).filter(i => !i.deleted);
+            // FIXED: Safe array check to prevent the TypeError
+            const items = this.safeGetStoreItems(store.id).filter(i => !i.deleted);
+
             if (items.length === 0) return;
 
             const checkedCount = items.filter(i => i.checked).length;
@@ -498,7 +511,7 @@ const App = {
 
         content.innerHTML = html;
         const remaining = totalItems - totalChecked;
-        stats.textContent = remaining > 0 ? `${remaining} item${remaining !== 1 ? 's' : ''} remaining` : '✓ All done!';
+        if (stats) stats.textContent = remaining > 0 ? `${remaining} item${remaining !== 1 ? 's' : ''} remaining` : '✓ All done!';
 
         overlay.classList.remove('hidden');
         document.getElementById('navHomeScreen').classList.add('hidden');
