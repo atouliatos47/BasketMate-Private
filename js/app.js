@@ -450,6 +450,67 @@ const App = {
         }
     },
 
+    showMyList() {
+        const overlay = document.getElementById('myListOverlay');
+        const content = document.getElementById('myListContent');
+        const stats = document.getElementById('myListStats');
+
+        const stores = API.stores || [];
+        let totalItems = 0;
+        let totalChecked = 0;
+        let html = '';
+
+        stores.forEach(store => {
+            const items = ((API.items || {})[store.id] || []).filter(i => !i.deleted);
+            if (items.length === 0) return;
+
+            const checkedCount = items.filter(i => i.checked).length;
+            totalItems += items.length;
+            totalChecked += checkedCount;
+
+            html += `
+                <div class="my-list-store-section">
+                    <div class="my-list-store-header">
+                        <img src="https://www.google.com/s2/favicons?domain=${store.domain || ''}&sz=64"
+                             onerror="this.style.display='none'"
+                             style="width:20px;height:20px;object-fit:contain;border-radius:4px;flex-shrink:0;">
+                        <span style="flex:1;font-weight:700;">${Utils.escapeHtml(store.name)}</span>
+                        <span class="my-list-store-count">${items.length - checkedCount} remaining</span>
+                    </div>
+                    ${items.map(item => `
+                        <div class="my-list-item${item.checked ? ' checked' : ''}">
+                            <div class="my-list-item-check${item.checked ? ' ticked' : ''}">
+                                ${item.checked ? '✓' : ''}
+                            </div>
+                            <span class="my-list-item-name">${Utils.escapeHtml(item.name)}</span>
+                        </div>
+                    `).join('')}
+                </div>`;
+        });
+
+        if (!html) {
+            html = `<div style="text-align:center;padding:60px 20px;color:#9ca3af;">
+                <div style="font-size:48px;margin-bottom:12px;">🛒</div>
+                <div style="font-size:16px;font-weight:600;">Your list is empty</div>
+                <div style="font-size:13px;margin-top:8px;">Add items from your stores to get started</div>
+            </div>`;
+        }
+
+        content.innerHTML = html;
+        const remaining = totalItems - totalChecked;
+        stats.textContent = remaining > 0 ? `${remaining} item${remaining !== 1 ? 's' : ''} remaining` : '✓ All done!';
+
+        overlay.classList.remove('hidden');
+        document.getElementById('navHomeScreen').classList.add('hidden');
+        document.getElementById('navMyList').classList.remove('hidden');
+    },
+
+    closeMyList() {
+        document.getElementById('myListOverlay').classList.add('hidden');
+        document.getElementById('navMyList').classList.add('hidden');
+        document.getElementById('navHomeScreen').classList.remove('hidden');
+    },
+
     darken(hex) {
         const n = parseInt(hex.slice(1), 16);
         const r = Math.max(0, (n >> 16) - 30);
